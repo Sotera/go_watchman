@@ -8,18 +8,11 @@ import (
 	"net/http"
 )
 
-type Annotation struct {
-	Object_id       string
-	Reference_id    string
-	Annotation_type string `json:"type"`
-	Value           string
-	Annotator       string
-}
 
 type annotation_fetcher struct {
 }
 
-func (af annotation_fetcher) fetch(options annotationOptions) (*[]Annotation, error) {
+func (af annotation_fetcher) fetch(options annotationOptions) ([]Annotation, error) {
 
 	flag.Parse()
 
@@ -39,5 +32,5 @@ func (af annotation_fetcher) fetch(options annotationOptions) (*[]Annotation, er
 	}
 
 	fmt.Println("annotations:", len(annotations))
-	return &annotations, nil
+	return annotations, nil
 }

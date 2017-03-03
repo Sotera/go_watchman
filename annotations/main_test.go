@@ -6,8 +6,8 @@ type mockFetcher struct {
 	annotations []Annotation
 }
 
-func (af mockFetcher) fetch(options annotationOptions) (*[]Annotation, error) {
-	return &af.annotations, nil
+func (af mockFetcher) fetch(options annotationOptions) ([]Annotation, error) {
+	return af.annotations, nil
 }
 
 func TestFetchAnnotations(t *testing.T) {
@@ -33,8 +33,8 @@ func TestFetchAnnotations(t *testing.T) {
 		t.Errorf("fetch failed with error: %v", err)
 	}
 
-	if len(*val) != 1 {
-		t.Errorf("annotation count expectd %v got %v", 0, len(*val))
+	if len(val) != 1 {
+		t.Errorf("annotation count expectd %v got %v", 0, len(val))
 	}
 }
 
@@ -64,6 +64,15 @@ func TestProcessAnnotationTypes(t *testing.T) {
 	if err == nil || err.Error() != "no annotation types to process" {
 		t.Error("process did not return error with bad type array")
 	}
+
+	annotation := Annotation{
+		Object_id:       "smevent:campaignID:eventID",
+		Reference_id:    "qcr.app.dev",
+		Annotation_type: "name",
+		Value:           "an event name",
+		Annotator:       "alex"}
+
+	fetcher.annotations = []Annotation{annotation}
 
 	err = process_annotation_types(options, annotation_types, fetcher)
 	if err != nil {

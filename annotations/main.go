@@ -6,7 +6,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
+	"sync"
 )
+
+type Annotation struct {
+	Object_id       string
+	Reference_id    string
+	Annotation_type string `json:"type"`
+	Value           string
+	Annotator       string
+}
 
 type annotationOptions struct {
 	startTime      string
@@ -16,7 +26,7 @@ type annotationOptions struct {
 }
 
 type fetcher interface {
-	fetch(options annotationOptions) (*[]Annotation, error)
+	fetch(options annotationOptions) ([]Annotation, error)
 }
 
 func main() {
@@ -67,18 +77,37 @@ func process_annotation_types(options annotationOptions, annotation_types []stri
 	return nil
 }
 
-func fetch_annotations(options annotationOptions, fetcher fetcher) (*[]Annotation, error) {
+func fetch_annotations(options annotationOptions, fetcher fetcher) ([]Annotation, error) {
 	annotations, err := fetcher.fetch(options)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("annotations:", len(*annotations))
+	fmt.Println("annotations:", len(annotations))
 	return annotations, nil
 }
 
-func process_annotations(annotations *[]Annotation) error {
-	fmt.Println("annotations:", len(*annotations))
+func parse_annotation_id(annotation_id string) (campaign string, event_id string) {
+	tokens := strings.Split(annotation_id, ":")
+	return tokens[1], tokens[2]
 
+}
+
+func process_annotations(annotations []Annotation) error {
+	fmt.Println("annotations:", len(annotations))
+	var wg sync.WaitGroup
+	for i := 0; i < len(annotations); i++ {
+		wg.Add(1)
+		annotation := annotations[i]
+		go update_event(&wg, annotation)
+	}
+
+	wg.Wait()
 	return nil
+}
+
+func update_event(wg *sync.WaitGroup, annotation Annotation) {
+	defer wg.Done()
+	campaign, event_id := parse_annotation_id(annotation.Object_id)
+	fmt.Printf("campaign: %v event_id: %v", campaign, event_id)
 }
