@@ -26,6 +26,11 @@ type Stats struct {
 	Created   int     `form:"created" json:"created"`
 }
 
+const (
+	dbName = "app_stats"
+	collName = "app"
+)
+
 var db *mgo.Session
 
 // match cache-busting names with local filenames
@@ -66,6 +71,17 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
+
+	// create indexes
+	coll := db.DB(dbName).C(collName)
+	idx := mgo.Index{
+		Name: "idx_created",
+		Key: []string{"created"},
+	}
+	err = coll.EnsureIndex(idx)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Optional. Switch the session to a monotonic behavior.
 	// dbSession.SetMode(mgo.Monotonic, true)
@@ -125,7 +141,7 @@ func main() {
 		api.GET("/watchman", func(c *gin.Context) {
 			results := []Stats{}
 
-			coll := db.DB("app_stats").C("app")
+			coll := db.DB(dbName).C(collName)
 			err := coll.Find(nil).Limit(60000).Sort("-created").All(&results)
 			if err != nil {
 				log.Fatal(err)
@@ -136,7 +152,7 @@ func main() {
 
 		// allow get request for ease of use
 		api.GET("/watchman/drop", func(c *gin.Context) {
-			coll := db.DB("app_stats").C("app")
+			coll := db.DB(dbName).C(collName)
 			err := coll.DropCollection()
 			if err != nil {
 				fmt.Println(err)
