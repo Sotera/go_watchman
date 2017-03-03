@@ -1,6 +1,6 @@
 ## Pinger
 
-Collect system stats by 'ping'ing the REST API, and provider simple monitoring UI.
+Collect system stats by 'ping'ing the REST API, and provide simple monitoring UI.
 
 ### Usage
 
