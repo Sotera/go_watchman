@@ -1,5 +1,7 @@
 ## Pinger
 
+Collect system stats by 'ping'ing the REST API, and provider simple monitoring UI.
+
 ### Usage
 
 ```
