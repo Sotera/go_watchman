@@ -1,0 +1,3 @@
+endpoints = [["event", "http://localhost:3000/api/events/count"], ["post", "http://localhost:3000/api/socialmediaposts/count"], ["post:featurized", "http://localhost:3000/api/socialmediaposts/count?[where][state]=featurized"], ["jobset", "http://localhost:3000/api/jobsets/count?[where][state]=new"]]
+
+api = "http://localhost:8080/api/watchman"

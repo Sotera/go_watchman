@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang='en-us'>
+
+<head>
+    <meta charset='UTF-8'>
+    <title></title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <!--<link rel='stylesheet' type='text/css' href='stylesheets/normalize.css' media='screen'>-->
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <!--<link rel='stylesheet' type='text/css' href='stylesheets/stylesheet.css' media='screen'>
+    <link rel='stylesheet' type='text/css' href='stylesheets/github-light.css' media='screen'>-->
+
+    <link href='/app/css/d3_timeseries.{{ .cache_bust }}.css' rel='stylesheet' type='text/css'></link>
+    <link href='/app/css/simple_grid.{{ .cache_bust }}.css' rel='stylesheet' type='text/css'></link>
+
+</head>
+
+<body>
+    <div class='grid-container'>
+        <div class='row'>
+            <div class='col-3'>
+                <h3>SM Posts</h3>
+                <div class='chartContainer'>
+                    <div class='chart' id='chart1'></div>
+                </div>
+            </div>
+            <div class='col-3'>
+                <h3>SM Posts (state: featurized)</h3>
+                <div class='chartContainer'>
+                    <div class='chart' id='chart2'></div>
+                </div>
+            </div>
+        </div>
+
+        <div class='row'>
+            <div class='col-3'>
+                <h3>Events</h3>
+                <div class='chartContainer'>
+                    <div class='chart' id='chart3'></div>
+                </div>
+            </div>
+            <div class='col-3'>
+                <h3>Job Sets (state: new/waiting)</h3>
+                <div class='chartContainer'>
+                    <div class='chart' id='chart4'></div>
+                </div>
+            </div>
+        </div>
+
+        <div class='row'>
+            <div class='col-3'>
+                <h3>Response time (millis)</h3>
+                <div class='chartContainer'>
+                    <div class='chart' id='chart5'></div>
+                </div>
+            </div>
+            <div class='col-3'>
+                <h3></h3>
+                <div class='chartContainer'>
+                    <div class='chart' id='chart6'></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src='//cdnjs.cloudflare.com/ajax/libs/d3/3.5.12/d3.min.js'></script>
+    <script src='/app/js/d3_timeseries.{{ .cache_bust }}.js'></script>
+    <script src='/app/js/app.{{ .cache_bust }}.js'></script>
+</body>
+
+</html>

@@ -1,0 +1,3 @@
+js/css assets in app/js app/css should be referenced in html using a cache busting name part.
+
+assets in app/vendor are 3rd party assets not expected to change and should include version in the filename.
