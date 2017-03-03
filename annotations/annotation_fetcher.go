@@ -9,9 +9,17 @@ import (
 )
 
 type Annotation struct {
+	Object_id       string
+	Reference_id    string
+	Annotation_type string `json:"type"`
+	Value           string
+	Annotator       string
 }
 
-func Fetch_annotations(options AnnotationOptions) (*[]Annotation, error) {
+type annotation_fetcher struct {
+}
+
+func (af annotation_fetcher) fetch(options annotationOptions) (*[]Annotation, error) {
 
 	flag.Parse()
 
