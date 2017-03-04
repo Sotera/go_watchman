@@ -1,6 +1,6 @@
 'use strict';
 
-var reload = setInterval(load, 5000)
+var reload = setInterval(load, 15000)
 
 function load() {
     fetch('/api/watchman')
