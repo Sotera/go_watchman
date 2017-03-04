@@ -1,6 +1,6 @@
 'use strict';
 
-var reload = setInterval(load, 15000)
+const reload = setInterval(load, 15000)
 
 function load() {
     fetch('/api/watchman')
@@ -12,16 +12,44 @@ function load() {
 load()
 
 function createCharts(data) {
-    renderChart(data.filter(d => d.query_type === 'post'), '#chart1', 'count')
-    renderChart(data.filter(d => d.query_type === 'post:featurized'), '#chart2', 'count')
-    renderChart(data.filter(d => d.query_type === 'event'), '#chart3', 'count')
-    renderChart(data.filter(d => d.query_type === 'jobset'), '#chart4', 'count')
-    renderChart(data.filter(d => d.query_type === 'event'), '#chart5', 'resp_time')
+    // filtering is slow so use a worker
+    [{
+        queryType: 'post',
+        chartSel: '#chart1',
+        ofX: 'count'
+    },
+    {
+        queryType: 'post:featurized',
+        chartSel: '#chart2',
+        ofX: 'count'
+    },
+    {
+        queryType: 'event',
+        chartSel: '#chart3',
+        ofX: 'count'
+    },
+    {
+        queryType: 'jobset',
+        chartSel: '#chart4',
+        ofX: 'count'
+    },
+    {
+        queryType: 'event',
+        chartSel: '#chart5',
+        ofX: 'resp_time'
+    }].forEach(obj => {
+        // use 'script.999.js' format to match cache bust checker. can be any number.
+        const worker = new Worker('/app/js/app-worker.999.js');
+        worker.postMessage({ queryType: obj.queryType, data })
+        worker.onmessage = event => {
+            renderChart(event.data.data, obj.chartSel, obj.ofX)
+        }
+    })
 }
 
 function renderChart(data, chartSel, ofX) {
     d3.selectAll(chartSel + ' > *').remove();
-    var chart = d3.timeseries()
+    let chart = d3.timeseries()
         .addSerie(
         data,
         { x: 'created', y: ofX },
@@ -37,12 +65,12 @@ function renderChart(data, chartSel, ofX) {
 
 // https://jsfiddle.net/jonathansampson/m7G64/
 function throttle(callback, limit) {
-    var wait = false;                  // Initially, we're not waiting
-    return function () {               // We return a throttled function
+    let wait = false;                  // Initially, we're not waiting
+    return () => {               // We return a throttled function
         if (!wait) {                   // If we're not waiting
             callback.call();           // Execute users function
             wait = true;               // Prevent future invocations
-            setTimeout(function () {   // After a period of time
+            setTimeout(() => {   // After a period of time
                 wait = false;          // And allow future invocations
             }, limit);
         }
