@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // Docs are docs returned from query.
@@ -274,8 +275,14 @@ func (p *Pager) GetNext() (Docs, error) {
 	return docs, nil
 }
 
-// PageOver runs docFunc for each doc in each page
-func (p *Pager) PageOver(docFunc func(doc Doc)) error {
+// PageOver runs docFunc for each doc in each page.
+// You must call done() in your docFunc, at the end of the func body,
+// to indicate async goroutine as complete.
+func (p *Pager) PageOver(docFunc func(doc Doc, done func())) error {
+	var wg sync.WaitGroup
+	wg.Add(p.TotalCount)
+
+	done := func() { wg.Done() }
 
 	for {
 		docs, err := p.GetNext()
@@ -287,9 +294,11 @@ func (p *Pager) PageOver(docFunc func(doc Doc)) error {
 		}
 
 		for _, doc := range docs {
-			docFunc(doc)
+			go docFunc(doc, done)
+			// wg.Done()
 		}
 	}
 
+	wg.Wait()
 	return nil
 }
