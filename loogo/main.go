@@ -2,10 +2,23 @@ package loogo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
+
+// Docs are docs returned from query.
+type Docs []Doc
+
+// Doc is a single item.
+type Doc map[string]interface{}
+
+// CountDoc returns from a /count endpoint.
+type CountDoc struct {
+	Count int `json:"count"`
+}
 
 // QueryParams is a slice of QueryParam.
 type QueryParams []QueryParam
@@ -15,6 +28,19 @@ type QueryParam struct {
 	QueryType string
 	Field     string
 	Values    []string
+}
+
+// APIErrorDoc matches API nested error object
+type APIErrorDoc struct {
+	Error APIError `json:"error"`
+}
+
+// APIError matches API error fields
+type APIError struct {
+	Name string `json:"name"`
+	// Status     int    `json:"status"`
+	StatusCode int    `json:"statusCode"`
+	Message    string `json:"message"`
 }
 
 // BuildQuery returns combined query string from QueryParams.
@@ -84,26 +110,38 @@ func Inq(p QueryParam, countOnly bool) string {
 	return strings.Join(parts, "")
 }
 
-// Pager pages over results from URL fetch.
+// Pager pages over docs from URL fetch.
 // Uses a scrolling technique, not offsets (offsets are slow in mongo).
 type Pager struct {
-	URL         string
-	CurrentPage int
-	TotalPages  int
-	TotalCount  int
-	PageSize    int
-	ScrollID    string
-	OrderBy     string
-	Query       string
+	URL           string
+	CurrentPage   int // 0-based
+	TotalPages    int
+	TotalCount    int
+	TotalReturned int
+	PageSize      int
+	ScrollID      string
+	OrderBy       string
+	Query         string
+}
+
+// NewPagerParams are params to NewPager.
+type NewPagerParams struct {
+	URL      string
+	Params   QueryParams
+	PageSize int
 }
 
 // NewPager inits a Pager instance.
-func NewPager(URL string, params QueryParams, pageSize int) (*Pager, error) {
-	URL = strings.TrimRight(URL, "/")
+func NewPager(params NewPagerParams) (*Pager, error) {
+	if params.PageSize == 0 {
+		params.PageSize = 100 // default
+	}
+	URL := strings.TrimRight(params.URL, "/")
 	orderBy := "_id"
+	var scrollID string
 
 	// 'findOne', 'count' do not use 'filter' prefix
-	qs := BuildQuery(params, true)
+	qs := BuildQuery(params.Params, true)
 
 	countEndpoint := URL + "/count" + qs
 	tc, err := getCount(countEndpoint)
@@ -111,21 +149,26 @@ func NewPager(URL string, params QueryParams, pageSize int) (*Pager, error) {
 		return nil, err
 	}
 
-	//find first item matching query, sorted
-	findOneEndpoint := URL + "/findone" + qs + fmt.Sprintf("&filter[order]=%s", orderBy)
-	scrollID, err := getFirstID(findOneEndpoint)
-	if err != nil {
-		return nil, err
+	// prep for scrolling if count > 0
+	if tc > 0 {
+		// find first item matching query, sorted
+		findOneEndpoint := URL + "/findone" + qs + fmt.Sprintf("&filter[order]=%s", orderBy)
+		scrollID, err = getFirstID(findOneEndpoint)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &Pager{
-		URL:        URL,
-		TotalCount: tc,
-		TotalPages: tc/pageSize + 1,
-		PageSize:   pageSize,
-		OrderBy:    orderBy,
-		ScrollID:   scrollID,
-		Query:      BuildQuery(params, false),
+		URL:           URL,
+		TotalCount:    tc,
+		TotalPages:    tc/params.PageSize + 1,
+		PageSize:      params.PageSize,
+		OrderBy:       orderBy,
+		ScrollID:      scrollID,
+		CurrentPage:   0,
+		TotalReturned: 0,
+		Query:         BuildQuery(params.Params, false),
 	}, nil
 }
 
@@ -137,11 +180,16 @@ func getCount(countEndpoint string) (int, error) {
 
 	defer resp.Body.Close()
 
-	results := map[string]float64{}
+	doc := CountDoc{}
 
-	json.NewDecoder(resp.Body).Decode(&results)
+	// this can hide an API error since decoding to CountDoc
+	// will be count == 0. maybe thats ok here?
+	err = json.NewDecoder(resp.Body).Decode(&doc)
+	if err != nil {
+		return -1, err
+	}
 
-	return int(results["count"]), nil
+	return int(doc.Count), nil
 }
 
 func getFirstID(findOneEndpoint string) (string, error) {
@@ -152,11 +200,32 @@ func getFirstID(findOneEndpoint string) (string, error) {
 
 	defer resp.Body.Close()
 
-	result := Result{}
+	doc := Doc{}
 
-	json.NewDecoder(resp.Body).Decode(&result)
+	// store body for multiple use
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 
-	return result["id"].(string), nil
+	err = json.Unmarshal(body, &doc)
+	if err != nil {
+		return "", err
+	}
+
+	//check for error message from API
+	_, ok := doc["error"]
+	if ok {
+		errRes := APIErrorDoc{}
+		err = json.Unmarshal(body, &errRes)
+		if err != nil {
+			return "", err
+		}
+
+		return "", errors.New(errRes.Error.Message)
+	}
+
+	return doc["id"].(string), nil
 }
 
 // byPage adds scrolling filters.
@@ -169,17 +238,24 @@ func (p *Pager) byPage() string {
 	return fmt.Sprintf("filter[where][id][%s]=%s&filter[limit]=%d&filter[order]=%s", op, p.ScrollID, p.PageSize, p.OrderBy)
 }
 
-// Results are query results.
-type Results []Result
+// GetNext returns next set of docs, nil if past upper bounds, or any error.
+func (p *Pager) GetNext() (Docs, error) {
+	docs := Docs{}
 
-// Result is a single item.
-type Result map[string]interface{}
-
-// GetNext returns next set of results, nil if past upper bounds, or any error.
-func (p *Pager) GetNext() (Results, error) {
-	if p.TotalCount == 0 || (p.CurrentPage >= p.TotalPages) {
-		return nil, nil
+	if p.TotalCount == 0 || (p.TotalCount == p.TotalReturned) {
+		return docs, nil
 	}
+
+	// always update pager state
+	defer func() {
+		p.CurrentPage++
+
+		// set last item in batch as new scrollid
+		if len(docs) > 0 {
+			p.ScrollID = docs[len(docs)-1]["id"].(string)
+			p.TotalReturned += len(docs)
+		}
+	}()
 
 	url := strings.Join([]string{p.URL + p.Query, p.byPage()}, "&")
 
@@ -190,18 +266,30 @@ func (p *Pager) GetNext() (Results, error) {
 
 	defer resp.Body.Close()
 
-	results := Results{}
-
-	json.NewDecoder(resp.Body).Decode(&results)
-	// fmt.Println(len(results))
-
-	if len(results) != 0 {
-		// get last item in batch to update scroll id
-		p.ScrollID = results[len(results)-1]["id"].(string)
-	} else {
-		return results, nil
+	err = json.NewDecoder(resp.Body).Decode(&docs)
+	if err != nil {
+		return nil, err
 	}
 
-	p.CurrentPage++
-	return results, nil
+	return docs, nil
+}
+
+// PageOver runs docFunc for each doc in each page
+func (p *Pager) PageOver(docFunc func(doc Doc)) error {
+
+	for {
+		docs, err := p.GetNext()
+		if err != nil {
+			return err
+		}
+		if len(docs) == 0 {
+			break
+		}
+
+		for _, doc := range docs {
+			docFunc(doc)
+		}
+	}
+
+	return nil
 }

@@ -1,7 +1,7 @@
 package loogo
 
 import (
-	_ "fmt"
+	"fmt"
 	_ "reflect"
 	"testing"
 )
@@ -86,21 +86,45 @@ func TestBuildQuery_for_count(t *testing.T) {
 	}
 }
 
-// func TestNewPager(t *testing.T) {
-// 	url := "http://localhost:3000/api/socialmediaposts/"
-// 	p1 := QueryParam{
-// 		QueryType: "Eq",
-// 		Field:     "featurizer",
-// 		Values:    []string{"df"},
-// 	}
+func TestNewPager(t *testing.T) {
+	url := "http://localhost:3000/api/socialmediaposts/"
+	p1 := QueryParam{
+		QueryType: "Eq",
+		Field:     "featurizer",
+		Values:    []string{"image"},
+	}
 
-// 	params := QueryParams{
-// 		p1,
-// 	}
+	params := QueryParams{
+		p1,
+	}
 
-// 	pager, _ := NewPager(url, params, 10)
-// 	res, _ := pager.GetNext()
-// 	fmt.Println(len(res), pager)
-// 	res, _ = pager.GetNext()
-// 	fmt.Println(len(res), pager)
-// }
+	pager, err := NewPager(NewPagerParams{
+		URL:      url,
+		Params:   params,
+		PageSize: 10,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	docs, err := pager.GetNext()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// docs, _ = pager.GetNext()
+
+	var i = 1
+	docFunc := func(doc Doc) {
+		// fmt.Println(doc)
+		fmt.Println(i)
+		i++
+	}
+	err = pager.PageOver(docFunc)
+	if err != nil {
+		fmt.Println(err)
+		// return
+	}
+
+	fmt.Println(len(docs), pager, pager.TotalReturned)
+}
