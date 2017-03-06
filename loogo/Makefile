@@ -1,5 +1,5 @@
 build:
-	go build github.com/lukewendling/loogo
+	go build github.com/Sotera/go_watchman/loogo
 
 test:
 	go test -v
