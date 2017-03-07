@@ -98,8 +98,16 @@ func fetch_annotations(options annotationOptions) ([]Annotation, error) {
 
 func parse_annotation_id(annotation_id string) (campaign string, event_id string) {
 	tokens := strings.Split(annotation_id, ":")
-	campaign = tokens[1]
-	event_id = tokens[2]
+	campaign, event_id = "", ""
+	if tokens == nil || len(tokens) <= 1 {
+		return
+	}
+	if len(tokens) > 1 {
+		campaign = tokens[1]
+	}
+	if len(tokens) > 2 {
+		event_id = tokens[2]
+	}
 	return
 }
 

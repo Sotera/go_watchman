@@ -106,6 +106,39 @@ func Test_process_annotations(t *testing.T) {
 	}
 }
 
+func Test_parse_annotation_id(t *testing.T) {
+
+	campaignId1, eventId1 := parse_annotation_id("smevent:campaignID:eventID")
+	if campaignId1 != "campaignID" || eventId1 != "eventID" {
+		t.Errorf("unexpected error: %v %v", campaignId1, eventId1)
+	}
+
+	campaignId2, eventId2 := parse_annotation_id("smevent::eventID")
+	if campaignId2 != "" || eventId2 != "eventID" {
+		t.Errorf("unexpected error: %v %v", campaignId2, eventId2)
+	}
+
+	campaignId3, eventId3 := parse_annotation_id("smevent::")
+	if campaignId3 != "" || eventId3 != "" {
+		t.Errorf("unexpected error: %v %v", campaignId3, eventId3)
+	}
+
+	campaignId4, eventId4 := parse_annotation_id("smevent:")
+	if campaignId4 != "" || eventId4 != "" {
+		t.Errorf("unexpected error: %v %v", campaignId4, eventId4)
+	}
+
+	campaignId5, eventId5 := parse_annotation_id("")
+	if campaignId5 != "" || eventId5 != "" {
+		t.Errorf("unexpected error: %v %v", campaignId5, eventId5)
+	}
+
+	campaignId6, eventId6 := parse_annotation_id("smevent::eventID")
+	if campaignId6 != "" || eventId6 != "eventID" {
+		t.Errorf("unexpected error: %v %v", campaignId6, eventId6)
+	}
+}
+
 type mockFetcher struct {
 	annotations []Annotation
 }
