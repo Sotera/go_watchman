@@ -303,13 +303,16 @@ func (p *Pager) PageOver(docFunc func(doc Doc, done func())) error {
 	return nil
 }
 
+// PagerInterface helps with dependency injection-based testing. see example dir.
 type PagerInterface interface {
 	PageOver(func(Doc, func())) error
 	GetNext() (Docs, error)
 }
 
+// TestPager is a bare bones pager with bogus docs.
 type TestPager struct{}
 
+// GetNext for tests
 func (p *TestPager) GetNext() (Docs, error) {
 	return Docs{
 		Doc{
@@ -323,6 +326,7 @@ func (p *TestPager) GetNext() (Docs, error) {
 	}, nil
 }
 
+// PageOver for tests
 func (p *TestPager) PageOver(docFunc func(doc Doc, done func())) error {
 	return nil
 }
