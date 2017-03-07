@@ -1,6 +1,7 @@
 package loogo
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -36,12 +37,76 @@ type APIErrorDoc struct {
 	Error APIError `json:"error"`
 }
 
+// error docs have differing data structure. search for err message.
+func (doc *APIErrorDoc) getMessage() string {
+	// should only be one of these
+	return doc.Error.Message + doc.Error.ErrMsg
+}
+
 // APIError matches API error fields
 type APIError struct {
 	Name string `json:"name"`
 	// Status     int    `json:"status"`
 	StatusCode int    `json:"statusCode"`
 	Message    string `json:"message"`
+	ErrMsg     string `json:"errmsg"`
+}
+
+// NewRequestParams are params to NewRequest.
+// Accepts same methods as http std lib.
+type NewRequestParams struct {
+	URL        string
+	Params     QueryParams
+	HTTPMethod string
+	Body       []byte
+}
+
+// NewRequest sends http request to API, for any type of http method.
+// Defaults to GET request. Populates result arg with returned values.
+// For GET requests, result should be a Docs{}. Otherwise, result should
+// be a Doc{} since PUT,POST,DELETE requests return a single item.
+// The result arg allows the client to tell this function what to expect
+// in an effort to reduce code complexity here.
+// Preferably the client sends a struct so that it can easily distinguish
+// between and valid result and an api error message.
+func NewRequest(params NewRequestParams, result interface{}) error {
+	params.URL = strings.TrimRight(params.URL, "/")
+	if params.HTTPMethod == "" {
+		params.HTTPMethod = "GET"
+	}
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest(
+		params.HTTPMethod,
+		params.URL+BuildQuery(params.Params, false),
+		bytes.NewBuffer(params.Body),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(body, result)
+	// TODO: this does not distinguish b/n valid results and err docs.
+	// how to?
+	if err != nil {
+		return errors.New(string(body))
+	}
+
+	return nil
 }
 
 // BuildQuery returns combined query string from QueryParams.
@@ -63,6 +128,9 @@ func BuildQuery(params QueryParams, countOnly bool) string {
 		}
 	}
 
+	if len(qs) == 0 {
+		return ""
+	}
 	return "?" + strings.Join(qs, "&")
 }
 
