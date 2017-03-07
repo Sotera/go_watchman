@@ -1,0 +1,35 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"github.com/sotera/go_watchman/annotations"
+	"log"
+	"os"
+)
+
+func main() {
+	options := annotations.AnnotationOptions{}
+	options.StartTime = *flag.String("start-time-ms", "", "start time in millis")
+	options.EndTime = *flag.String("end-time-ms", "", "end time in millis")
+	options.AnnotationType = *flag.String("annotation-type", "", "the type of annotation to process")
+	flag.Parse()
+
+	options.AnnotationApiRoot = os.Getenv("ANNOTATION_API_ROOT")
+	if options.AnnotationApiRoot == "" {
+		options.AnnotationApiRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotations"
+	}
+
+	options.ApiRoot = os.Getenv("API_ROOT")
+	if options.ApiRoot == "" {
+		options.ApiRoot = "http://localhost:3003/api"
+	}
+
+	options.Annotation_types = []string{"name", "relevant"}
+	options.Fetcher = annotations.AnnotationFetcher{}
+	options.PagerFactory = annotations.PagerFactory{}
+	err := annotations.ProcessAnnotationTypes(options)
+	if err != nil {
+		log.Fatal(fmt.Println(err))
+	}
+}

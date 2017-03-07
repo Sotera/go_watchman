@@ -46,7 +46,7 @@ func TestBetween(t *testing.T) {
 	}
 }
 
-func TestBuildQuery_not_for_count(t *testing.T) {
+func TestBuildQueryNotForCount(t *testing.T) {
 	p1 := QueryParam{
 		QueryType: "Eq",
 		Field:     "status",
@@ -70,7 +70,7 @@ func TestBuildQuery_not_for_count(t *testing.T) {
 	}
 }
 
-func TestBuildQuery_for_count(t *testing.T) {
+func TestBuildQueryForCount(t *testing.T) {
 	p1 := QueryParam{
 		QueryType: "Eq",
 		Field:     "status",
