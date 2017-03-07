@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"github.com/sotera/go_watchman/loogo"
 )
 
 type Annotation struct {
@@ -111,4 +112,11 @@ func update_event(wg *sync.WaitGroup, annotation Annotation) {
 	defer wg.Done()
 	campaign, event_id := parse_annotation_id(annotation.Object_id)
 	fmt.Printf("campaign: %v event_id: %v", campaign, event_id)
+
+	p1 := loogo.QueryParam{
+		QueryType: "Eq",
+		Field:     "id",
+		Values:    []string{"new"},
+	}
+	loogo.Eq(p1, false)
 }
