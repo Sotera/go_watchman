@@ -4,11 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/sotera/go_watchman/loogo"
 	"log"
 	"os"
 	"strings"
 	"sync"
-	"github.com/sotera/go_watchman/loogo"
 )
 
 type Annotation struct {
@@ -17,17 +17,26 @@ type Annotation struct {
 	Annotation_type string `json:"type"`
 	Value           string
 	Annotator       string
+	EventId         string
+	CampaignId      string
 }
 
 type annotationOptions struct {
-	startTime      string
-	endTime        string
-	apiRoot        string
-	annotationType string
+	startTime        string
+	endTime          string
+	apiRoot          string
+	annotationType   string
+	annotation_types []string
+	fetcher          fetcher
+	pagerFactory     LoogoPagerFactory
 }
 
 type fetcher interface {
 	fetch(options annotationOptions) ([]Annotation, error)
+}
+
+type LoogoPagerFactory interface {
+	generate(params loogo.NewPagerParams) (loogo.PagerInterface, error)
 }
 
 func main() {
@@ -42,34 +51,33 @@ func main() {
 		options.apiRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotations"
 	}
 
-	annotation_types := []string{"name", "relevant"}
-	fetcher := annotation_fetcher{}
-
-	err := process_annotation_types(options, annotation_types, fetcher)
+	options.annotation_types = []string{"name", "relevant"}
+	options.fetcher = annotation_fetcher{}
+	options.pagerFactory = pager_factory{}
+	err := process_annotation_types(options)
 	if err != nil {
 		log.Fatal(fmt.Println(err))
 	}
 }
 
-func process_annotation_types(options annotationOptions, annotation_types []string, fetcher fetcher) error {
-
-	if fetcher == nil {
-		return errors.New("fetcher instance was nil, please provide a fetcher")
-	}
+func process_annotation_types(options annotationOptions) error {
 	if options.apiRoot == "" || options.endTime == "" || options.startTime == "" {
 		return errors.New("invalid options")
 	}
-	if annotation_types == nil || len(annotation_types) == 0 {
+	if options.fetcher == nil {
+		return errors.New("fetcher instance was nil, please provide a fetcher")
+	}
+	if options.annotation_types == nil || len(options.annotation_types) == 0 {
 		return errors.New("no annotation types to process")
 	}
 
-	for i := 0; i < len(annotation_types); i++ {
-		options.annotationType = annotation_types[i]
-		annotations, err := fetch_annotations(options, fetcher)
+	for i := 0; i < len(options.annotation_types); i++ {
+		options.annotationType = options.annotation_types[i]
+		annotations, err := fetch_annotations(options)
 		if err != nil {
 			return err
 		}
-		err = process_annotations(annotations)
+		err = process_annotations(annotations, options.pagerFactory)
 		if err != nil {
 			return err
 		}
@@ -78,8 +86,8 @@ func process_annotation_types(options annotationOptions, annotation_types []stri
 	return nil
 }
 
-func fetch_annotations(options annotationOptions, fetcher fetcher) ([]Annotation, error) {
-	annotations, err := fetcher.fetch(options)
+func fetch_annotations(options annotationOptions) ([]Annotation, error) {
+	annotations, err := options.fetcher.fetch(options)
 	if err != nil {
 		return nil, err
 	}
@@ -95,28 +103,60 @@ func parse_annotation_id(annotation_id string) (campaign string, event_id string
 	return
 }
 
-func process_annotations(annotations []Annotation) error {
+func process_annotations(annotations []Annotation, pagerFactory LoogoPagerFactory) error {
 	fmt.Println("annotations:", len(annotations))
 	var wg sync.WaitGroup
 	for i := 0; i < len(annotations); i++ {
-		wg.Add(1)
 		annotation := annotations[i]
-		go update_event(&wg, annotation)
+		annotation.CampaignId, annotation.EventId = parse_annotation_id(annotation.Object_id)
+
+		params := loogo.QueryParams{
+			loogo.QueryParam{
+				QueryType: "Eq",
+				Field:     "event",
+				Values:    []string{annotation.EventId},
+			},
+			loogo.QueryParam{
+				QueryType: "Eq",
+				Field:     "campaign",
+				Values:    []string{annotation.CampaignId},
+			},
+		}
+
+		pager, err := pagerFactory.generate(loogo.NewPagerParams{
+			URL:      "http://localhost/api/events",
+			Params:   params,
+			PageSize: 1,
+		})
+
+		if err != nil {
+			return err
+		}
+		page, err := pager.GetNext()
+		if err != nil {
+			return err
+		}
+
+		wg.Add(1)
+		if len(page) < 1 {
+			go create_annotation(&wg, annotation, page[0])
+		} else {
+			go update_annotation(&wg, annotation, page[0])
+		}
 	}
 
 	wg.Wait()
 	return nil
 }
 
-func update_event(wg *sync.WaitGroup, annotation Annotation) {
+func create_annotation(wg *sync.WaitGroup, annotation Annotation, doc loogo.Doc) {
 	defer wg.Done()
-	campaign, event_id := parse_annotation_id(annotation.Object_id)
-	fmt.Printf("campaign: %v event_id: %v", campaign, event_id)
 
-	p1 := loogo.QueryParam{
-		QueryType: "Eq",
-		Field:     "id",
-		Values:    []string{"new"},
-	}
-	loogo.Eq(p1, false)
+	//create new annotation
+}
+
+func update_annotation(wg *sync.WaitGroup, annotation Annotation, doc loogo.Doc) {
+	defer wg.Done()
+
+	//update annotation
 }
