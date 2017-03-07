@@ -302,3 +302,27 @@ func (p *Pager) PageOver(docFunc func(doc Doc, done func())) error {
 	wg.Wait()
 	return nil
 }
+
+type PagerInterface interface {
+	PageOver(func(Doc, func())) error
+	GetNext() (Docs, error)
+}
+
+type TestPager struct{}
+
+func (p *TestPager) GetNext() (Docs, error) {
+	return Docs{
+		Doc{
+			"id":   "123",
+			"name": "apple",
+		},
+		Doc{
+			"id":   "456",
+			"name": "pear",
+		},
+	}, nil
+}
+
+func (p *TestPager) PageOver(docFunc func(doc Doc, done func())) error {
+	return nil
+}
