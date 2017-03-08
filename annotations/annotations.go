@@ -101,7 +101,7 @@ func ProcessAnnotations(annotations []Annotation, pagerFactory LoogoPagerFactory
 		}
 
 		pager, err := pagerFactory.Generate(loogo.NewPagerParams{
-			URL:      "http://localhost/api/events",
+			URL:      "http://localhost:3003/api/events",
 			Params:   params,
 			PageSize: 1,
 		})
@@ -116,7 +116,7 @@ func ProcessAnnotations(annotations []Annotation, pagerFactory LoogoPagerFactory
 
 		wg.Add(1)
 		if len(page) < 1 {
-			go CreateAnnotation(&wg, annotation, page[0])
+			go CreateAnnotation(&wg, annotation)
 		} else {
 			go UpdateAnnotation(&wg, annotation, page[0])
 		}
@@ -126,7 +126,7 @@ func ProcessAnnotations(annotations []Annotation, pagerFactory LoogoPagerFactory
 	return nil
 }
 
-func CreateAnnotation(wg *sync.WaitGroup, annotation Annotation, doc loogo.Doc) {
+func CreateAnnotation(wg *sync.WaitGroup, annotation Annotation) {
 	defer wg.Done()
 
 	//create new annotation

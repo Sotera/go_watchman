@@ -9,11 +9,14 @@ import (
 )
 
 func main() {
-	options := annotations.AnnotationOptions{}
-	options.StartTime = *flag.String("start-time-ms", "", "start time in millis")
-	options.EndTime = *flag.String("end-time-ms", "", "end time in millis")
-	options.AnnotationType = *flag.String("annotation-type", "", "the type of annotation to process")
+
+	startTime := flag.String("start-time-ms", "", "start time in millis")
+	endTime := flag.String("end-time-ms", "", "end time in millis")
 	flag.Parse()
+
+	options := annotations.AnnotationOptions{}
+	options.StartTime = *startTime
+	options.EndTime = *endTime
 
 	options.AnnotationApiRoot = os.Getenv("ANNOTATION_API_ROOT")
 	if options.AnnotationApiRoot == "" {

@@ -149,7 +149,7 @@ func (af MockFetcher) Fetch(options AnnotationOptions) ([]Annotation, error) {
 
 type mockPagerFactory struct{}
 
-func (pf mockPagerFactory) generate(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
+func (pf mockPagerFactory) Generate(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
 	return mock_pager{}, nil
 }
 
