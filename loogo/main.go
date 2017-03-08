@@ -68,7 +68,7 @@ type NewRequestParams struct {
 // The result arg allows the client to tell this function what to expect
 // in an effort to reduce code complexity here.
 // Preferably the client sends a struct so that it can easily distinguish
-// between and valid result and an api error message.
+// between a valid result and an api error message.
 func NewRequest(params NewRequestParams, result interface{}) error {
 	params.URL = strings.TrimRight(params.URL, "/")
 	if params.HTTPMethod == "" {
@@ -261,6 +261,7 @@ func getCount(countEndpoint string) (int, error) {
 	return int(doc.Count), nil
 }
 
+// first ID in set is needed to seed the scrolling.
 func getFirstID(findOneEndpoint string) (string, error) {
 	resp, err := http.Get(findOneEndpoint)
 	if err != nil {
