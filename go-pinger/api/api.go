@@ -7,6 +7,8 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/gin-contrib/gzip"
+
 	mgo "gopkg.in/mgo.v2"
 	_ "gopkg.in/mgo.v2/bson"
 
@@ -27,7 +29,7 @@ type Stats struct {
 }
 
 const (
-	dbName = "app_stats"
+	dbName   = "app_stats"
 	collName = "app"
 )
 
@@ -53,7 +55,7 @@ func cacheBustHandler(c *gin.Context) {
 		}
 		c.File(fp)
 	} else {
-		// not sure if this is correct way to continue route matching
+		// TODO: this returns an empty body. no bueno. how to continue route matching?
 		c.Abort()
 	}
 }
@@ -76,7 +78,7 @@ func main() {
 	coll := db.DB(dbName).C(collName)
 	idx := mgo.Index{
 		Name: "idx_created",
-		Key: []string{"created"},
+		Key:  []string{"created"},
 	}
 	err = coll.EnsureIndex(idx)
 	if err != nil {
@@ -87,6 +89,7 @@ func main() {
 	// dbSession.SetMode(mgo.Monotonic, true)
 
 	r := gin.Default()
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	indexTmpl, err := filepath.Abs("../app/index.tmpl")
 	if err != nil {
