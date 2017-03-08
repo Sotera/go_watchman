@@ -1,9 +1,15 @@
 package annotations
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/sotera/go_watchman/loogo"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -16,6 +22,14 @@ type Annotation struct {
 	Annotator       string
 	EventId         string
 	CampaignId      string
+}
+
+type AnnotationModel struct {
+	campaign string   `json:"campaign"`
+	event    string   `json:"event"`
+	features []string `json:"features"`
+	name     string   `json:"name"`
+	relevant bool     `json:"relevant"`
 }
 
 type AnnotationOptions struct {
@@ -46,7 +60,7 @@ func ProcessAnnotationTypes(options AnnotationOptions) error {
 		if err != nil {
 			return err
 		}
-		err = ProcessAnnotations(annotations, options.PagerFactory)
+		err = ProcessAnnotations(annotations, options)
 		if err != nil {
 			return err
 		}
@@ -80,7 +94,7 @@ func ParseAnnotationId(annotation_id string) (campaign string, event_id string) 
 	return
 }
 
-func ProcessAnnotations(annotations []Annotation, pagerFactory LoogoPagerFactory) error {
+func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
 	fmt.Println("annotations:", len(annotations))
 	var wg sync.WaitGroup
 	for i := 0; i < len(annotations); i++ {
@@ -100,7 +114,7 @@ func ProcessAnnotations(annotations []Annotation, pagerFactory LoogoPagerFactory
 			},
 		}
 
-		pager, err := pagerFactory.Generate(loogo.NewPagerParams{
+		pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
 			URL:      "http://localhost:3003/api/events",
 			Params:   params,
 			PageSize: 1,
@@ -116,9 +130,9 @@ func ProcessAnnotations(annotations []Annotation, pagerFactory LoogoPagerFactory
 
 		wg.Add(1)
 		if len(page) < 1 {
-			go CreateAnnotation(&wg, annotation)
+			go CreateAnnotation(&wg, options, annotation)
 		} else {
-			go UpdateAnnotation(&wg, annotation, page[0])
+			go UpdateAnnotation(&wg, options, annotation, page[0])
 		}
 	}
 
@@ -126,14 +140,46 @@ func ProcessAnnotations(annotations []Annotation, pagerFactory LoogoPagerFactory
 	return nil
 }
 
-func CreateAnnotation(wg *sync.WaitGroup, annotation Annotation) {
+func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
 	defer wg.Done()
-
+	model := AnnotationModel{}
+	model.campaign = annotation.CampaignId
+	model.event = annotation.EventId
+	model.features = []string{}
+	if annotation.Annotation_type == "name" {
+		model.name = annotation.Value
+	} else {
+		model.relevant, _ = strconv.ParseBool(annotation.Value)
+	}
+	Post(options.ApiRoot+"/annotations", model)
 	//create new annotation
 }
 
-func UpdateAnnotation(wg *sync.WaitGroup, annotation Annotation, doc loogo.Doc) {
+func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, doc loogo.Doc) {
 	defer wg.Done()
 
 	//update annotation
+}
+
+func Post(url string, annotation AnnotationModel) (string, error) {
+	fmt.Println("URL:>", url)
+	buffer := new(bytes.Buffer)
+	b, err := json.Marshal(annotation)
+	if err != nil {
+		log.Fatal(err)
+		return "", err
+	}
+	fmt.Println("result:" + string(b))
+	json.NewEncoder(buffer).Encode(annotation)
+	res, err := http.Post("https://httpbin.org/post", "application/json; charset=utf-8", buffer)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+
+	fmt.Println("response Status:", res.Status)
+	fmt.Println("response Headers:", res.Header)
+	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Println("response Body:", string(body))
+	return string(body), nil
 }
