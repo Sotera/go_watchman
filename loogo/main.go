@@ -377,6 +377,11 @@ type PagerInterface interface {
 	GetNext() (Docs, error)
 }
 
+// HTTPRequestor helps with dependency injection-based testing.
+type HTTPRequestor interface {
+	NewRequest(NewRequestParams, interface{}) error
+}
+
 // TestPager is a bare bones pager with bogus docs.
 type TestPager struct{}
 
