@@ -88,10 +88,26 @@ func TestProcessAnnotationTypes(t *testing.T) {
 
 }
 
+func TestLoogoInterfaces(t *testing.T) {
+	pagerFactory := mockPagerFactory{}
+	pager, err := pagerFactory.Generate(loogo.NewPagerParams{
+		URL:      "http://localhost:3003/api/annotations",
+		Params:   nil,
+		PageSize: 1,
+	})
+	page, err := pager.GetNext()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	value := page[0]["id"].(string)
+	println(value)
+}
+
 func TestProcessAnnotations(t *testing.T) {
 	//func process_annotations(annotations []Annotation, pagerFactory LoogoPagerFactory) error {
 
-	annotations := []Annotation{{
+	testAnnos := []Annotation{{
 		Object_id:       "smevent:campaignID:eventID",
 		Reference_id:    "qcr.app.dev",
 		Annotation_type: "name",
@@ -99,8 +115,17 @@ func TestProcessAnnotations(t *testing.T) {
 		Annotator:       "alex"}}
 
 	pagerFactory := mockPagerFactory{}
+	options := AnnotationOptions{
+		StartTime:         "",
+		EndTime:           "",
+		AnnotationApiRoot: "",
+		AnnotationType:    "",
+		Annotation_types:  []string{"test"},
+		Fetcher:           nil,
+		PagerFactory:      pagerFactory,
+	}
 
-	err := ProcessAnnotations(annotations, pagerFactory)
+	err := ProcessAnnotations(testAnnos, options)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

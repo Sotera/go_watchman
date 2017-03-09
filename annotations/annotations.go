@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type Annotation struct {
@@ -25,11 +24,12 @@ type Annotation struct {
 }
 
 type AnnotationModel struct {
-	campaign string   `json:"campaign"`
-	event    string   `json:"event"`
-	features []string `json:"features"`
-	name     string   `json:"name"`
-	relevant bool     `json:"relevant"`
+	Campaign string   `json:"campaign,omitempty"`
+	Event    string   `json:"event,omitempty"`
+	Features []string `json:"features,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	Relevant bool     `json:"relevant,omitempty"`
+	Id       string   `json:"id,omitempty"`
 }
 
 type AnnotationOptions struct {
@@ -70,13 +70,13 @@ func ProcessAnnotationTypes(options AnnotationOptions) error {
 }
 
 func FetchAnnotations(options AnnotationOptions) ([]Annotation, error) {
-	annotations, err := options.Fetcher.Fetch(options)
+	results, err := options.Fetcher.Fetch(options)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("annotations:", len(annotations))
-	return annotations, nil
+	fmt.Println("annotations:", len(results))
+	return results, nil
 }
 
 func ParseAnnotationId(annotation_id string) (campaign string, event_id string) {
@@ -96,7 +96,6 @@ func ParseAnnotationId(annotation_id string) (campaign string, event_id string) 
 
 func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
 	fmt.Println("annotations:", len(annotations))
-	var wg sync.WaitGroup
 	for i := 0; i < len(annotations); i++ {
 		annotation := annotations[i]
 		annotation.CampaignId, annotation.EventId = ParseAnnotationId(annotation.Object_id)
@@ -115,7 +114,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 		}
 
 		pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
-			URL:      "http://localhost:3003/api/events",
+			URL:      "http://localhost:3003/api/annotations",
 			Params:   params,
 			PageSize: 1,
 		})
@@ -128,50 +127,80 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 			return err
 		}
 
-		wg.Add(1)
 		if len(page) < 1 {
-			go CreateAnnotation(&wg, options, annotation)
+			CreateAnnotation(options, annotation)
 		} else {
-			go UpdateAnnotation(&wg, options, annotation, page[0])
+			model := AnnotationModel{}
+			model.Id = page[0]["id"].(string)
+			model.Campaign = page[0]["campaign"].(string)
+			model.Event = page[0]["event"].(string)
+			model.Name = page[0]["name"].(string)
+			model.Relevant = page[0]["relevant"].(bool)
+			UpdateAnnotation(options, annotation, model)
 		}
 	}
 
-	wg.Wait()
 	return nil
 }
 
-func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
-	defer wg.Done()
+func CreateAnnotation(options AnnotationOptions, annotation Annotation) {
 	model := AnnotationModel{}
-	model.campaign = annotation.CampaignId
-	model.event = annotation.EventId
-	model.features = []string{}
+	model.Campaign = annotation.CampaignId
+	model.Event = annotation.EventId
+	model.Features = []string{}
 	if annotation.Annotation_type == "name" {
-		model.name = annotation.Value
+		model.Name = annotation.Value
 	} else {
-		model.relevant, _ = strconv.ParseBool(annotation.Value)
+		model.Relevant, _ = strconv.ParseBool(annotation.Value)
 	}
 	Post(options.ApiRoot+"/annotations", model)
 	//create new annotation
 }
 
-func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, doc loogo.Doc) {
-	defer wg.Done()
+func UpdateAnnotation(options AnnotationOptions, annotation Annotation, model AnnotationModel) {
+	var m map[string]int
+	m = make(map[string]int)
+	m["a"] = 5
+	m["b"] = 6
+	if annotation.Annotation_type == "name" {
+		model.Name = annotation.Value
+	} else {
+		model.Relevant, _ = strconv.ParseBool(annotation.Value)
+	}
+	Put(options.ApiRoot+"/annotations", model)
+}
 
-	//update annotation
+func Put(url string, annotation AnnotationModel) (string, error) {
+	client := &http.Client{}
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(annotation)
+	request, err := http.NewRequest("PUT", url, buffer)
+	response, err := client.Do(request)
+	if err != nil {
+		log.Fatal(err)
+		return "", err
+	}
+
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+		return "", err
+	}
+	fmt.Println("The calculated length is:", len(string(contents)), "for the url:", url)
+	fmt.Println("   ", response.StatusCode)
+	hdr := response.Header
+	for key, value := range hdr {
+		fmt.Println("   ", key, ":", value)
+	}
+	return string(contents), nil
 }
 
 func Post(url string, annotation AnnotationModel) (string, error) {
 	fmt.Println("URL:>", url)
 	buffer := new(bytes.Buffer)
-	b, err := json.Marshal(annotation)
-	if err != nil {
-		log.Fatal(err)
-		return "", err
-	}
-	fmt.Println("result:" + string(b))
 	json.NewEncoder(buffer).Encode(annotation)
-	res, err := http.Post("https://httpbin.org/post", "application/json; charset=utf-8", buffer)
+	res, err := http.Post(url, "application/json; charset=utf-8", buffer)
 	if err != nil {
 		return "", err
 	}
