@@ -1,8 +1,9 @@
 package annotations
 
 import (
-	"github.com/sotera/go_watchman/loogo"
 	"testing"
+
+	"github.com/Sotera/go_watchman/loogo"
 )
 
 func TestFetchAnnotations(t *testing.T) {

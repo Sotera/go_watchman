@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sotera/go_watchman/loogo"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+
+	"github.com/Sotera/go_watchman/loogo"
 )
 
 type Annotation struct {
@@ -29,7 +31,7 @@ type AnnotationModel struct {
 	Features []string `json:"features,omitempty"`
 	Name     string   `json:"name,omitempty"`
 	Relevant bool     `json:"relevant,omitempty"`
-	Id       string   `json:"id,omitempty"`
+	ID       string   `json:"id,omitempty"`
 }
 
 type AnnotationOptions struct {
@@ -96,6 +98,7 @@ func ParseAnnotationId(annotation_id string) (campaign string, event_id string) 
 
 func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
 	fmt.Println("annotations:", len(annotations))
+	var wg sync.WaitGroup
 	for i := 0; i < len(annotations); i++ {
 		annotation := annotations[i]
 		annotation.CampaignId, annotation.EventId = ParseAnnotationId(annotation.Object_id)
@@ -127,23 +130,26 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 			return err
 		}
 
+		wg.Add(1)
 		if len(page) < 1 {
-			CreateAnnotation(options, annotation)
+			CreateAnnotation(&wg, options, annotation)
 		} else {
 			model := AnnotationModel{}
-			model.Id = page[0]["id"].(string)
+			model.ID = page[0]["id"].(string)
 			model.Campaign = page[0]["campaign"].(string)
 			model.Event = page[0]["event"].(string)
 			model.Name = page[0]["name"].(string)
 			model.Relevant = page[0]["relevant"].(bool)
-			UpdateAnnotation(options, annotation, model)
+			UpdateAnnotation(&wg, options, annotation, model)
 		}
 	}
 
+	wg.Wait()
 	return nil
 }
 
-func CreateAnnotation(options AnnotationOptions, annotation Annotation) {
+func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
+	defer wg.Done()
 	model := AnnotationModel{}
 	model.Campaign = annotation.CampaignId
 	model.Event = annotation.EventId
@@ -157,13 +163,18 @@ func CreateAnnotation(options AnnotationOptions, annotation Annotation) {
 	//create new annotation
 }
 
-func UpdateAnnotation(options AnnotationOptions, annotation Annotation, model AnnotationModel) {
+func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) {
+	defer wg.Done()
 	var m map[string]int
 	m = make(map[string]int)
 	m["a"] = 5
 	m["b"] = 6
 	if annotation.Annotation_type == "name" {
+		println(model.Name)
+		println(annotation.Value)
 		model.Name = annotation.Value
+		println(model.Name)
+		println(annotation.Value)
 	} else {
 		model.Relevant, _ = strconv.ParseBool(annotation.Value)
 	}
@@ -175,6 +186,8 @@ func Put(url string, annotation AnnotationModel) (string, error) {
 	buffer := new(bytes.Buffer)
 	json.NewEncoder(buffer).Encode(annotation)
 	request, err := http.NewRequest("PUT", url, buffer)
+	request.Header.Set("Content-Type", "application/json")
+
 	response, err := client.Do(request)
 	if err != nil {
 		log.Fatal(err)
