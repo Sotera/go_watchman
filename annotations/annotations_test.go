@@ -105,7 +105,7 @@ func TestLoogoInterfaces(t *testing.T) {
 	println(value)
 }
 
-func TestProcessAnnotations(t *testing.T) {
+/*func TestProcessAnnotations(t *testing.T) {
 	//func process_annotations(annotations []Annotation, pagerFactory LoogoPagerFactory) error {
 
 	testAnnos := []Annotation{{
@@ -131,7 +131,7 @@ func TestProcessAnnotations(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
-
+*/
 func TestParseAnnotationId(t *testing.T) {
 
 	campaignId1, eventId1 := ParseAnnotationId("smevent:campaignID:eventID")

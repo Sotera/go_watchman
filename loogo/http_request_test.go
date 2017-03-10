@@ -13,7 +13,7 @@ func TestNewRequest(t *testing.T) {
 	doc := Doc{}
 	url := "http://bogus"
 	r := HTTPRequestParser{
-		client: &TestHTTPClient{},
+		Client: &TestHTTPClient{},
 	}
 	err := r.NewRequest(NewRequestParams{URL: url}, &doc)
 	if err != nil {
@@ -34,7 +34,7 @@ func TestNewRequest_custom_struct(t *testing.T) {
 	doc := MyObj{}
 	url := "http://bogus"
 	r := HTTPRequestParser{
-		client: &TestHTTPClient{},
+		Client: &TestHTTPClient{},
 	}
 	err := r.NewRequest(NewRequestParams{URL: url}, &doc)
 	if err != nil {

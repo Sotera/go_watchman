@@ -25,7 +25,7 @@ type RequestParser interface {
 
 // HTTPRequestParser parses requests from its client interface.
 type HTTPRequestParser struct {
-	client HTTPRequester
+	Client HTTPRequester
 }
 
 // NewRequestParams are params to NewRequest.
@@ -80,7 +80,7 @@ func (c *HTTPClient) DoRequest(params NewRequestParams) ([]byte, error) {
 // Preferably the client sends a struct so that it can easily distinguish
 // between a valid result and an api error message.
 func (r *HTTPRequestParser) NewRequest(params NewRequestParams, result interface{}) error {
-	body, err := r.client.DoRequest(params)
+	body, err := r.Client.DoRequest(params)
 	if err != nil {
 		return err
 	}

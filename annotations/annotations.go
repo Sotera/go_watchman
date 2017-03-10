@@ -1,13 +1,9 @@
 package annotations
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,6 +38,7 @@ type AnnotationOptions struct {
 	AnnotationType    string
 	Annotation_types  []string
 	Fetcher           Fetcher
+	Parser            loogo.RequestParser
 	PagerFactory      LoogoPagerFactory
 }
 
@@ -132,7 +129,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 
 		wg.Add(1)
 		if len(page) < 1 {
-			CreateAnnotation(&wg, options, annotation)
+			err = CreateAnnotation(&wg, options, annotation)
 		} else {
 			model := AnnotationModel{}
 			model.ID = page[0]["id"].(string)
@@ -140,7 +137,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 			model.Event = page[0]["event"].(string)
 			model.Name = page[0]["name"].(string)
 			model.Relevant = page[0]["relevant"].(bool)
-			UpdateAnnotation(&wg, options, annotation, model)
+			err = UpdateAnnotation(&wg, options, annotation, model)
 		}
 	}
 
@@ -148,7 +145,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 	return nil
 }
 
-func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
+func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) error {
 	defer wg.Done()
 	model := AnnotationModel{}
 	model.Campaign = annotation.CampaignId
@@ -159,69 +156,42 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	} else {
 		model.Relevant, _ = strconv.ParseBool(annotation.Value)
 	}
-	Post(options.ApiRoot+"/annotations", model)
-	//create new annotation
+	doc := loogo.Doc{}
+	bytes, err := json.Marshal(model)
+	if err != nil {
+		return err
+	}
+	params := loogo.NewRequestParams{
+		URL:        options.ApiRoot + "/annotations",
+		Body:       bytes,
+		HTTPMethod: "POST",
+	}
+	options.Parser.NewRequest(params, doc)
+	return nil
 }
 
-func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) {
+func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) error {
 	defer wg.Done()
 	var m map[string]int
 	m = make(map[string]int)
 	m["a"] = 5
 	m["b"] = 6
 	if annotation.Annotation_type == "name" {
-		println(model.Name)
-		println(annotation.Value)
 		model.Name = annotation.Value
-		println(model.Name)
-		println(annotation.Value)
 	} else {
 		model.Relevant, _ = strconv.ParseBool(annotation.Value)
 	}
-	Put(options.ApiRoot+"/annotations", model)
-}
-
-func Put(url string, annotation AnnotationModel) (string, error) {
-	client := &http.Client{}
-	buffer := new(bytes.Buffer)
-	json.NewEncoder(buffer).Encode(annotation)
-	request, err := http.NewRequest("PUT", url, buffer)
-	request.Header.Set("Content-Type", "application/json")
-
-	response, err := client.Do(request)
+	doc := loogo.Doc{}
+	bytes, err := json.Marshal(model)
 	if err != nil {
-		log.Fatal(err)
-		return "", err
+		return err
 	}
 
-	defer response.Body.Close()
-	contents, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-		return "", err
+	params := loogo.NewRequestParams{
+		URL:        options.ApiRoot + "/annotations",
+		Body:       bytes,
+		HTTPMethod: "PUT",
 	}
-	fmt.Println("The calculated length is:", len(string(contents)), "for the url:", url)
-	fmt.Println("   ", response.StatusCode)
-	hdr := response.Header
-	for key, value := range hdr {
-		fmt.Println("   ", key, ":", value)
-	}
-	return string(contents), nil
-}
-
-func Post(url string, annotation AnnotationModel) (string, error) {
-	fmt.Println("URL:>", url)
-	buffer := new(bytes.Buffer)
-	json.NewEncoder(buffer).Encode(annotation)
-	res, err := http.Post(url, "application/json; charset=utf-8", buffer)
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
-
-	fmt.Println("response Status:", res.Status)
-	fmt.Println("response Headers:", res.Header)
-	body, _ := ioutil.ReadAll(res.Body)
-	fmt.Println("response Body:", string(body))
-	return string(body), nil
+	options.Parser.NewRequest(params, doc)
+	return nil
 }

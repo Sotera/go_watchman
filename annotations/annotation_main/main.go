@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/Sotera/go_watchman/annotations"
 	"log"
 	"os"
+
+	"github.com/Sotera/go_watchman/annotations"
+	"github.com/Sotera/go_watchman/loogo"
 )
 
 func main() {
@@ -28,9 +30,15 @@ func main() {
 		options.ApiRoot = "http://localhost:3003/api"
 	}
 
+	parser := loogo.HTTPRequestParser{
+		Client: &loogo.HTTPClient{},
+	}
+
 	options.Annotation_types = []string{"name", "relevant"}
 	options.Fetcher = annotations.AnnotationFetcher{}
 	options.PagerFactory = annotations.PagerFactory{}
+	options.Parser = &parser
+
 	err := annotations.ProcessAnnotationTypes(options)
 	if err != nil {
 		log.Fatal(fmt.Println(err))

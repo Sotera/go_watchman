@@ -36,7 +36,7 @@ func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, erro
 		Object_id:       "smevent:MyTestCampaign:06c1909d-0ce3-4df3-86fd-2104c10a8581",
 		Reference_id:    "qcr.app.dev",
 		Annotation_type: "name",
-		Value:           "test2",
+		Value:           "test3",
 		Annotator:       "alex"}}
 	fmt.Println("annotations:", len(annotations))
 	return annotations, nil
