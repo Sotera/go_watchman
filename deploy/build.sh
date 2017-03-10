@@ -2,7 +2,7 @@
 
 set -o errexit
 
-if [ "$#" -lt 3 ]; then
+if [ "$#" -lt 2 ]; then
   echo "usage: $0 project tag [push]"
   exit 1
 fi
