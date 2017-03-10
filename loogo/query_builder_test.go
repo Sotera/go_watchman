@@ -2,54 +2,54 @@ package loogo
 
 import "testing"
 
-func TestInq(t *testing.T) {
+func Test_inq(t *testing.T) {
 	p1 := QueryParam{
-		QueryType: "Inq",
+		QueryType: "inq",
 		Field:     "status",
 		Values:    []string{"done", "new"},
 	}
 
 	want := "filter[where][status][inq]=done&filter[where][status][inq]=new"
-	if got := Inq(p1, false); got != want {
-		t.Errorf("Inq() = %v, want %v", got, want)
+	if got := inq(p1, false); got != want {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
 
-func TestEq(t *testing.T) {
+func Test_eq(t *testing.T) {
 	p1 := QueryParam{
-		QueryType: "Eq",
+		QueryType: "eq",
 		Field:     "status",
 		Values:    []string{"new"},
 	}
 
 	want := "filter[where][status]=new"
-	if got := Eq(p1, false); got != want {
-		t.Errorf("Eq() = %v, want %v", got, want)
+	if got := eq(p1, false); got != want {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
 
-func TestBetween(t *testing.T) {
+func Test_between(t *testing.T) {
 	p1 := QueryParam{
-		QueryType: "Between",
+		QueryType: "between",
 		Field:     "status",
 		Values:    []string{"1", "2"},
 	}
 
 	want := "filter[where][status][between][0]=1&filter[where][status][between][1]=2"
-	if got := Between(p1, false); got != want {
-		t.Errorf("Between() = %v, want %v", got, want)
+	if got := between(p1, false); got != want {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
 
-func TestBuildQuery_not_for_count(t *testing.T) {
+func Test_buildQuery_not_for_count(t *testing.T) {
 	p1 := QueryParam{
-		QueryType: "Eq",
+		QueryType: "eq",
 		Field:     "status",
 		Values:    []string{"done"},
 	}
 
 	p2 := QueryParam{
-		QueryType: "Between",
+		QueryType: "between",
 		Field:     "timestamp_ms",
 		Values:    []string{"1", "2"},
 	}
@@ -60,14 +60,14 @@ func TestBuildQuery_not_for_count(t *testing.T) {
 	}
 
 	want := "?filter[where][status]=done&filter[where][timestamp_ms][between][0]=1&filter[where][timestamp_ms][between][1]=2"
-	if got := BuildQuery(params, false); got != want {
-		t.Errorf("BuildQuery() = %v, want %v", got, want)
+	if got := buildQuery(params, false); got != want {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
 
-func TestBuildQuery_for_count(t *testing.T) {
+func Test_buildQuery_for_count(t *testing.T) {
 	p1 := QueryParam{
-		QueryType: "Eq",
+		QueryType: "eq",
 		Field:     "status",
 		Values:    []string{"new", "done"},
 	}
@@ -77,7 +77,7 @@ func TestBuildQuery_for_count(t *testing.T) {
 	}
 
 	want := "?[where][status]=new"
-	if got := BuildQuery(params, true); got != want {
-		t.Errorf("BuildQuery() = %v, want %v", got, want)
+	if got := buildQuery(params, true); got != want {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }

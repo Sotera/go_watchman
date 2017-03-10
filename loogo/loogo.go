@@ -86,7 +86,7 @@ func NewPager(params NewPagerParams) (*Pager, error) {
 	var scrollID string
 
 	// 'findOne', 'count' do not use 'filter' prefix
-	qs := BuildQuery(params.Params, true)
+	qs := buildQuery(params.Params, true)
 
 	countEndpoint := URL + "/count" + qs
 	tc, err := getCount(countEndpoint)
@@ -113,15 +113,16 @@ func NewPager(params NewPagerParams) (*Pager, error) {
 		ScrollID:      scrollID,
 		CurrentPage:   0,
 		TotalReturned: 0,
-		Query:         BuildQuery(params.Params, false),
+		Query:         buildQuery(params.Params, false),
 	}, nil
 }
 
 func getCount(countEndpoint string) (int, error) {
 	doc := CountDoc{}
+	parser := HTTPRequestParser{client: &HTTPClient{}}
 	// this can hide an API error since decoding to CountDoc
 	// will be count == 0. maybe thats ok here?
-	err := NewRequest(NewRequestParams{URL: countEndpoint}, &doc)
+	err := parser.NewRequest(NewRequestParams{URL: countEndpoint}, &doc)
 	if err != nil {
 		return -1, err
 	}
@@ -132,9 +133,10 @@ func getCount(countEndpoint string) (int, error) {
 // first ID in set is needed to seed the scrolling.
 func getFirstID(findOneEndpoint string) (string, error) {
 	doc := Doc{}
+	client := &HTTPClient{}
 
 	// store body for multiple use
-	body, err := DoRequest(NewRequestParams{URL: findOneEndpoint})
+	body, err := client.DoRequest(NewRequestParams{URL: findOneEndpoint})
 	if err != nil {
 		return "", err
 	}
@@ -190,7 +192,9 @@ func (p *Pager) GetNext() (Docs, error) {
 
 	url := strings.Join([]string{p.URL + p.Query, p.byPage()}, "&")
 
-	err := NewRequest(NewRequestParams{URL: url}, &docs)
+	parser := HTTPRequestParser{client: &HTTPClient{}}
+
+	err := parser.NewRequest(NewRequestParams{URL: url}, &docs)
 	if err != nil {
 		return nil, err
 	}

@@ -5,20 +5,20 @@ import (
 	"strings"
 )
 
-// BuildQuery returns combined query string from QueryParams.
+// buildQuery returns combined query string from QueryParams.
 // Prepends '?' to return value.
 // countOnly: don't include 'filter' in query string.
-func BuildQuery(params QueryParams, countOnly bool) string {
+func buildQuery(params QueryParams, countOnly bool) string {
 	qs := []string{}
 
 	for _, p := range params {
 		switch strings.ToLower(p.QueryType) {
 		case "between":
-			qs = append(qs, Between(p, countOnly))
+			qs = append(qs, between(p, countOnly))
 		case "eq":
-			qs = append(qs, Eq(p, countOnly))
+			qs = append(qs, eq(p, countOnly))
 		case "inq":
-			qs = append(qs, Inq(p, countOnly))
+			qs = append(qs, inq(p, countOnly))
 		default:
 			fmt.Println("unknown QueryType")
 		}
@@ -30,8 +30,8 @@ func BuildQuery(params QueryParams, countOnly bool) string {
 	return "?" + strings.Join(qs, "&")
 }
 
-// Between returns loopback querystring for between queries.
-func Between(p QueryParam, countOnly bool) string {
+// between returns loopback querystring for between queries.
+func between(p QueryParam, countOnly bool) string {
 	qs := []string{}
 	prefix := "filter"
 	if countOnly {
@@ -47,8 +47,8 @@ func Between(p QueryParam, countOnly bool) string {
 	return strings.Join(parts, "")
 }
 
-// Eq returns loopback querystring for equality queries.
-func Eq(p QueryParam, countOnly bool) string {
+// eq returns loopback querystring for equality queries.
+func eq(p QueryParam, countOnly bool) string {
 	prefix := "filter"
 	if countOnly {
 		prefix = ""
@@ -57,9 +57,9 @@ func Eq(p QueryParam, countOnly bool) string {
 	return fmt.Sprintf("%s[where][%s]=%s", prefix, p.Field, p.Values[0])
 }
 
-// Inq returns loopback querystring for inclusion queries.
+// inq returns loopback querystring for inclusion queries.
 // ex. filter[where][name][inq]=foo&filter[where][name][inq]=bar
-func Inq(p QueryParam, countOnly bool) string {
+func inq(p QueryParam, countOnly bool) string {
 	qs := []string{}
 	prefix := "filter"
 	if countOnly {
