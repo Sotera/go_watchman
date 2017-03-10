@@ -1,15 +1,18 @@
 package loogo
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strings"
 	"sync"
 )
+
+// PagerInterface helps with dependency injection-based testing. see example dir.
+type PagerInterface interface {
+	PageOver(func(Doc, func())) error
+	GetNext() (Docs, error)
+}
 
 // Docs are docs returned from query.
 type Docs []Doc
@@ -50,133 +53,6 @@ type APIError struct {
 	StatusCode int    `json:"statusCode"`
 	Message    string `json:"message"`
 	ErrMsg     string `json:"errmsg"`
-}
-
-// NewRequestParams are params to NewRequest.
-// Accepts same methods as http std lib.
-type NewRequestParams struct {
-	URL        string
-	Params     QueryParams
-	HTTPMethod string
-	Body       []byte
-}
-
-// NewRequest sends http request to API, for any type of http method.
-// Defaults to GET request. Populates result arg with returned values.
-// For GET requests, result should be a Docs{}. Otherwise, result should
-// be a Doc{} since PUT,POST,DELETE requests return a single item.
-// The result arg allows the client to tell this function what to expect
-// in an effort to reduce code complexity here.
-// Preferably the client sends a struct so that it can easily distinguish
-// between a valid result and an api error message.
-func NewRequest(params NewRequestParams, result interface{}) error {
-	params.URL = strings.TrimRight(params.URL, "/")
-	if params.HTTPMethod == "" {
-		params.HTTPMethod = "GET"
-	}
-
-	client := &http.Client{}
-
-	req, err := http.NewRequest(
-		params.HTTPMethod,
-		params.URL+BuildQuery(params.Params, false),
-		bytes.NewBuffer(params.Body),
-	)
-	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(body, result)
-	// TODO: this does not distinguish b/n valid results and err docs.
-	// how to?
-	if err != nil {
-		return errors.New(string(body))
-	}
-
-	return nil
-}
-
-// BuildQuery returns combined query string from QueryParams.
-// Prepends '?' to return value.
-// countOnly: don't include 'filter' in query string.
-func BuildQuery(params QueryParams, countOnly bool) string {
-	qs := []string{}
-
-	for _, p := range params {
-		switch strings.ToLower(p.QueryType) {
-		case "between":
-			qs = append(qs, Between(p, countOnly))
-		case "eq":
-			qs = append(qs, Eq(p, countOnly))
-		case "inq":
-			qs = append(qs, Inq(p, countOnly))
-		default:
-			fmt.Println("unknown QueryType")
-		}
-	}
-
-	if len(qs) == 0 {
-		return ""
-	}
-	return "?" + strings.Join(qs, "&")
-}
-
-// Between returns loopback querystring for between queries.
-func Between(p QueryParam, countOnly bool) string {
-	qs := []string{}
-	prefix := "filter"
-	if countOnly {
-		prefix = ""
-	}
-
-	for i, v := range p.Values {
-		qs = append(qs, fmt.Sprintf("[where][%s][between][%d]=%s", p.Field, i, v))
-	}
-
-	parts := []string{prefix, strings.Join(qs, "&"+prefix)}
-
-	return strings.Join(parts, "")
-}
-
-// Eq returns loopback querystring for equality queries.
-func Eq(p QueryParam, countOnly bool) string {
-	prefix := "filter"
-	if countOnly {
-		prefix = ""
-	}
-
-	return fmt.Sprintf("%s[where][%s]=%s", prefix, p.Field, p.Values[0])
-}
-
-// Inq returns loopback querystring for inclusion queries.
-// ex. filter[where][name][inq]=foo&filter[where][name][inq]=bar
-func Inq(p QueryParam, countOnly bool) string {
-	qs := []string{}
-	prefix := "filter"
-	if countOnly {
-		prefix = ""
-	}
-
-	for _, v := range p.Values {
-		qs = append(qs, fmt.Sprintf("[where][%s][inq]=%s", p.Field, v))
-	}
-
-	parts := []string{prefix, strings.Join(qs, "&"+prefix)}
-
-	return strings.Join(parts, "")
 }
 
 // Pager pages over docs from URL fetch.
@@ -242,18 +118,10 @@ func NewPager(params NewPagerParams) (*Pager, error) {
 }
 
 func getCount(countEndpoint string) (int, error) {
-	resp, err := http.Get(countEndpoint)
-	if err != nil {
-		return -1, err
-	}
-
-	defer resp.Body.Close()
-
 	doc := CountDoc{}
-
 	// this can hide an API error since decoding to CountDoc
 	// will be count == 0. maybe thats ok here?
-	err = json.NewDecoder(resp.Body).Decode(&doc)
+	err := NewRequest(NewRequestParams{URL: countEndpoint}, &doc)
 	if err != nil {
 		return -1, err
 	}
@@ -263,17 +131,10 @@ func getCount(countEndpoint string) (int, error) {
 
 // first ID in set is needed to seed the scrolling.
 func getFirstID(findOneEndpoint string) (string, error) {
-	resp, err := http.Get(findOneEndpoint)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
 	doc := Doc{}
 
 	// store body for multiple use
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := DoRequest(NewRequestParams{URL: findOneEndpoint})
 	if err != nil {
 		return "", err
 	}
@@ -329,14 +190,7 @@ func (p *Pager) GetNext() (Docs, error) {
 
 	url := strings.Join([]string{p.URL + p.Query, p.byPage()}, "&")
 
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&docs)
+	err := NewRequest(NewRequestParams{URL: url}, &docs)
 	if err != nil {
 		return nil, err
 	}
@@ -370,17 +224,6 @@ func (p *Pager) PageOver(docFunc func(doc Doc, done func())) error {
 
 	wg.Wait()
 	return nil
-}
-
-// PagerInterface helps with dependency injection-based testing. see example dir.
-type PagerInterface interface {
-	PageOver(func(Doc, func())) error
-	GetNext() (Docs, error)
-}
-
-// HTTPRequestor helps with dependency injection-based testing.
-type HTTPRequestor interface {
-	NewRequest(NewRequestParams, interface{}) error
 }
 
 // TestPager is a bare bones pager with bogus docs.
