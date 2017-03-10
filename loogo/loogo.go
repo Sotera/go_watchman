@@ -119,7 +119,7 @@ func NewPager(params NewPagerParams) (*Pager, error) {
 
 func getCount(countEndpoint string) (int, error) {
 	doc := CountDoc{}
-	parser := HTTPRequestParser{client: &HTTPClient{}}
+	parser := HTTPRequestParser{Client: &HTTPClient{}}
 	// this can hide an API error since decoding to CountDoc
 	// will be count == 0. maybe thats ok here?
 	err := parser.NewRequest(NewRequestParams{URL: countEndpoint}, &doc)
@@ -192,7 +192,7 @@ func (p *Pager) GetNext() (Docs, error) {
 
 	url := strings.Join([]string{p.URL + p.Query, p.byPage()}, "&")
 
-	parser := HTTPRequestParser{client: &HTTPClient{}}
+	parser := HTTPRequestParser{Client: &HTTPClient{}}
 
 	err := parser.NewRequest(NewRequestParams{URL: url}, &docs)
 	if err != nil {

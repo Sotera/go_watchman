@@ -1,6 +1,6 @@
 package client
 
-import "github.com/Sotera/go_watchman/loogo"
+import "github.com/sotera/go_watchman/loogo"
 import "strings"
 
 func main() {
