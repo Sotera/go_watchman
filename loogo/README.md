@@ -5,5 +5,5 @@ Loopback REST queries with Golang.
 ### Install
 
 ```
-git clone github.com/sotera/go_watchman/loogo
+go get github.com/Sotera/go_watchman/loogo
 ```
