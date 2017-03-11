@@ -26,7 +26,7 @@ func TestNewRequest(t *testing.T) {
 	}
 }
 
-func TestNewRequest_custom_struct(t *testing.T) {
+func TestNewRequestCustomStruct(t *testing.T) {
 	type MyObj struct {
 		Name   string   `json:"name"`
 		Things []string `json:"things"`

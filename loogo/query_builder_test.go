@@ -2,7 +2,7 @@ package loogo
 
 import "testing"
 
-func Test_inq(t *testing.T) {
+func TestInq(t *testing.T) {
 	p1 := QueryParam{
 		QueryType: "inq",
 		Field:     "status",
@@ -15,7 +15,7 @@ func Test_inq(t *testing.T) {
 	}
 }
 
-func Test_eq(t *testing.T) {
+func TestEq(t *testing.T) {
 	p1 := QueryParam{
 		QueryType: "eq",
 		Field:     "status",
@@ -28,7 +28,7 @@ func Test_eq(t *testing.T) {
 	}
 }
 
-func Test_between(t *testing.T) {
+func TestBetween(t *testing.T) {
 	p1 := QueryParam{
 		QueryType: "between",
 		Field:     "status",
@@ -41,7 +41,7 @@ func Test_between(t *testing.T) {
 	}
 }
 
-func Test_buildQuery_not_for_count(t *testing.T) {
+func TestBuildQueryNotForCount(t *testing.T) {
 	p1 := QueryParam{
 		QueryType: "eq",
 		Field:     "status",
@@ -65,7 +65,7 @@ func Test_buildQuery_not_for_count(t *testing.T) {
 	}
 }
 
-func Test_buildQuery_for_count(t *testing.T) {
+func TestBuildQueryForCount(t *testing.T) {
 	p1 := QueryParam{
 		QueryType: "eq",
 		Field:     "status",
