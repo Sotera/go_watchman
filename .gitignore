@@ -6,6 +6,9 @@
 # Folders
 _obj
 _test
+.idea
+.vscode
+tmp
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -25,3 +28,5 @@ _testmain.go
 
 # Build/Deploy dirs
 deploy/bin
+
+*.log

@@ -55,7 +55,7 @@ type APIError struct {
 	ErrMsg     string `json:"errmsg"`
 }
 
-// Pager pages over docs from URL fetch.
+// Pager pages over docs from URL.
 // Uses a scrolling technique, not offsets (offsets are slow in mongo).
 type Pager struct {
 	URL           string
@@ -67,6 +67,7 @@ type Pager struct {
 	ScrollID      string
 	OrderBy       string
 	Query         string
+	Parser        RequestParser // for mocking convenience
 }
 
 // NewPagerParams are params to NewPager.
@@ -77,6 +78,7 @@ type NewPagerParams struct {
 }
 
 // NewPager inits a Pager instance.
+// TODO: NewPager is difficult to test: Unable to mock network calls.
 func NewPager(params NewPagerParams) (*Pager, error) {
 	if params.PageSize == 0 {
 		params.PageSize = 100 // default
@@ -114,12 +116,13 @@ func NewPager(params NewPagerParams) (*Pager, error) {
 		CurrentPage:   0,
 		TotalReturned: 0,
 		Query:         buildQuery(params.Params, false),
+		Parser:        &HTTPRequestParser{Client: &HTTPClient{}},
 	}, nil
 }
 
 func getCount(countEndpoint string) (int, error) {
 	doc := CountDoc{}
-	parser := HTTPRequestParser{client: &HTTPClient{}}
+	parser := HTTPRequestParser{Client: &HTTPClient{}}
 	// this can hide an API error since decoding to CountDoc
 	// will be count == 0. maybe thats ok here?
 	err := parser.NewRequest(NewRequestParams{URL: countEndpoint}, &doc)
@@ -192,9 +195,7 @@ func (p *Pager) GetNext() (Docs, error) {
 
 	url := strings.Join([]string{p.URL + p.Query, p.byPage()}, "&")
 
-	parser := HTTPRequestParser{client: &HTTPClient{}}
-
-	err := parser.NewRequest(NewRequestParams{URL: url}, &docs)
+	err := p.Parser.NewRequest(NewRequestParams{URL: url}, &docs)
 	if err != nil {
 		return nil, err
 	}

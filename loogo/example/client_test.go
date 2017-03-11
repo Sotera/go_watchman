@@ -3,7 +3,7 @@ package client
 import (
 	"testing"
 
-	"github.com/Sotera/go_watchman/loogo"
+	"github.com/sotera/go_watchman/loogo"
 )
 
 type CustomPager struct{}
