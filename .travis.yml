@@ -1,0 +1,11 @@
+sudo: false
+language: go
+go:
+  - 1.6.3
+  - tip
+env:
+  CGO_ENABLED=0
+install:
+  - go get github.com/BurntSushi/toml
+script:
+  - go test -v ./...
