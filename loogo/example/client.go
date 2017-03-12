@@ -1,6 +1,6 @@
 package client
 
-import "github.com/sotera/go_watchman/loogo"
+import "github.com/Sotera/go_watchman/loogo"
 import "strings"
 
 func main() {
@@ -8,24 +8,28 @@ func main() {
 	// nothing interesting to test here.
 	params := loogo.NewPagerParams{
 		Params: loogo.QueryParams{},
-		URL:    "http://localhost/api/events",
+		URL:    "http://localhost:3000/api/events",
 	}
 	p, err := loogo.NewPager(params)
 	if err != nil {
 		panic(err)
 	}
 
-	c := client{}
-	c.getNames(p)
+	c := client{
+		pager: p,
+	}
+	c.getNames()
 }
 
-type client struct{}
+type client struct {
+	pager loogo.PagerInterface
+}
 
 // this is a function we want to test and can do so by providing our own
 // custom pager.
-func (c client) getNames(p loogo.PagerInterface) (string, error) {
+func (c client) getNames() (string, error) {
 
-	docs, err := p.GetNext()
+	docs, err := c.pager.GetNext()
 	if err != nil {
 		return "", err
 	}

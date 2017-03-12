@@ -3,7 +3,7 @@ package client
 import (
 	"testing"
 
-	"github.com/sotera/go_watchman/loogo"
+	"github.com/Sotera/go_watchman/loogo"
 )
 
 type CustomPager struct{}
@@ -29,10 +29,12 @@ func (p *CustomPager) PageOver(docFunc func(doc loogo.Doc, done func())) error {
 func TestClientDoWorkTestPager(t *testing.T) {
 	pager := &loogo.TestPager{}
 
-	c := client{}
+	c := client{
+		pager: pager,
+	}
 
 	want := "apple pear"
-	if got, _ := c.getNames(pager); got != want {
+	if got, _ := c.getNames(); got != want {
 		t.Errorf("getNames() = %v, want %v", got, want)
 	}
 }
@@ -41,10 +43,12 @@ func TestClientDoWorkTestPager(t *testing.T) {
 func TestClientDoWorkCustomPager(t *testing.T) {
 	pager := &CustomPager{}
 
-	c := client{}
+	c := client{
+		pager: pager,
+	}
 
 	want := "doggy bear"
-	if got, _ := c.getNames(pager); got != want {
+	if got, _ := c.getNames(); got != want {
 		t.Errorf("getNames() = %v, want %v", got, want)
 	}
 }
