@@ -26,7 +26,7 @@ func (p *CustomPager) PageOver(docFunc func(doc loogo.Doc, done func())) error {
 }
 
 // use simple TestPager from loogo
-func Test_client_doWork_testPager(t *testing.T) {
+func TestClientDoWorkTestPager(t *testing.T) {
 	pager := &loogo.TestPager{}
 
 	c := client{}
@@ -38,7 +38,7 @@ func Test_client_doWork_testPager(t *testing.T) {
 }
 
 // use custom pager
-func Test_client_doWork_customPager(t *testing.T) {
+func TestClientDoWorkCustomPager(t *testing.T) {
 	pager := &CustomPager{}
 
 	c := client{}
