@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,49 +13,49 @@ import (
 )
 
 type Annotation struct {
-	Object_id       string
-	Reference_id    string
-	Annotation_type string `json:"type"`
-	Value           string
-	Annotator       string
-	EventId         string
-	CampaignId      string
+	ObjectID       string `json:"Object_id"`
+	ReferenceID    string `json:"Reference_id"`
+	AnnotationType string `json:"type"`
+	Value          string `json:"Value"`
+	Annotator      string `json:"Annotator"`
+	EventID        string `json:"EventId"`
+	CampaignID     string `json:"CampaignId"`
 }
 
 type AnnotationModel struct {
-	Campaign string   `json:"campaign,omitempty"`
-	Event    string   `json:"event,omitempty"`
-	Features []string `json:"features,omitempty"`
-	Name     string   `json:"name,omitempty"`
-	Relevant bool     `json:"relevant,omitempty"`
-	ID       string   `json:"id,omitempty"`
+	Campaign string      `json:"campaign,omitempty"`
+	Event    string      `json:"event,omitempty"`
+	Features interface{} `json:"features,omitempty"`
+	Name     string      `json:"name,omitempty"`
+	Relevant bool        `json:"relevant,omitempty"`
+	ID       string      `json:"id,omitempty"`
 }
 
 type AnnotationOptions struct {
 	StartTime         string
 	EndTime           string
-	ApiRoot           string
-	AnnotationApiRoot string
+	APIRoot           string
+	AnnotationAPIRoot string
 	AnnotationType    string
-	Annotation_types  []string
+	AnnotationTypes   []string
 	Fetcher           Fetcher
 	Parser            loogo.RequestParser
 	PagerFactory      LoogoPagerFactory
 }
 
 func ProcessAnnotationTypes(options AnnotationOptions) error {
-	if options.AnnotationApiRoot == "" || options.EndTime == "" || options.StartTime == "" {
+	if options.AnnotationAPIRoot == "" || options.EndTime == "" || options.StartTime == "" {
 		return errors.New("invalid options")
 	}
 	if options.Fetcher == nil {
 		return errors.New("fetcher instance was nil, please provide a fetcher")
 	}
-	if options.Annotation_types == nil || len(options.Annotation_types) == 0 {
+	if options.AnnotationTypes == nil || len(options.AnnotationTypes) == 0 {
 		return errors.New("no annotation types to process")
 	}
 
-	for i := 0; i < len(options.Annotation_types); i++ {
-		options.AnnotationType = options.Annotation_types[i]
+	for i := 0; i < len(options.AnnotationTypes); i++ {
+		options.AnnotationType = options.AnnotationTypes[i]
 		annotations, err := FetchAnnotations(options)
 		if err != nil {
 			return err
@@ -78,7 +79,7 @@ func FetchAnnotations(options AnnotationOptions) ([]Annotation, error) {
 	return results, nil
 }
 
-func ParseAnnotationId(annotation_id string) (campaign string, event_id string) {
+func ParseAnnotationID(annotation_id string) (campaign string, event_id string) {
 	tokens := strings.Split(annotation_id, ":")
 	campaign, event_id = "", ""
 	if tokens == nil || len(tokens) <= 1 {
@@ -98,23 +99,23 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 	var wg sync.WaitGroup
 	for i := 0; i < len(annotations); i++ {
 		annotation := annotations[i]
-		annotation.CampaignId, annotation.EventId = ParseAnnotationId(annotation.Object_id)
+		annotation.CampaignID, annotation.EventID = ParseAnnotationID(annotation.ObjectID)
 
 		params := loogo.QueryParams{
 			loogo.QueryParam{
 				QueryType: "Eq",
 				Field:     "event",
-				Values:    []string{annotation.EventId},
+				Values:    []string{annotation.EventID},
 			},
 			loogo.QueryParam{
 				QueryType: "Eq",
 				Field:     "campaign",
-				Values:    []string{annotation.CampaignId},
+				Values:    []string{annotation.CampaignID},
 			},
 		}
 
 		pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
-			URL:      "http://localhost:3003/api/annotations",
+			URL:      options.APIRoot + "/annotations",
 			Params:   params,
 			PageSize: 1,
 		})
@@ -129,15 +130,21 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 
 		wg.Add(1)
 		if len(page) < 1 {
-			err = CreateAnnotation(&wg, options, annotation)
+			CreateAnnotation(&wg, options, annotation)
 		} else {
 			model := AnnotationModel{}
 			model.ID = page[0]["id"].(string)
 			model.Campaign = page[0]["campaign"].(string)
 			model.Event = page[0]["event"].(string)
-			model.Name = page[0]["name"].(string)
-			model.Relevant = page[0]["relevant"].(bool)
-			err = UpdateAnnotation(&wg, options, annotation, model)
+
+			if name, ok := page[0]["name"]; ok {
+				model.Name = name.(string)
+			}
+			if relevant, ok := page[0]["relevant"]; ok {
+				model.Relevant = relevant.(bool)
+			}
+
+			UpdateAnnotation(&wg, options, annotation, model)
 		}
 	}
 
@@ -145,13 +152,51 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 	return nil
 }
 
-func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) error {
+func GetEvent(options AnnotationOptions, annotation Annotation) (loogo.Doc, error) {
+	params := loogo.QueryParams{
+		loogo.QueryParam{
+			QueryType: "Eq",
+			Field:     "_id",
+			Values:    []string{annotation.EventID},
+		},
+	}
+
+	pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
+		URL:      options.APIRoot + "/events",
+		Params:   params,
+		PageSize: 1,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	page, err := pager.GetNext()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(page) < 1 {
+		return nil, errors.New("Event:" + annotation.EventID + " not found")
+	}
+
+	return page[0], nil
+}
+
+func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
 	defer wg.Done()
 	model := AnnotationModel{}
-	model.Campaign = annotation.CampaignId
-	model.Event = annotation.EventId
-	model.Features = []string{}
-	if annotation.Annotation_type == "name" {
+	model.Campaign = annotation.CampaignID
+	model.Event = annotation.EventID
+
+	event, err := GetEvent(options, annotation)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	model.Features = event["hashtags"]
+
+	if annotation.AnnotationType == "name" {
 		model.Name = annotation.Value
 	} else {
 		model.Relevant, _ = strconv.ParseBool(annotation.Value)
@@ -159,24 +204,24 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	doc := loogo.Doc{}
 	bytes, err := json.Marshal(model)
 	if err != nil {
-		return err
+		log.Fatal(err)
+		return
 	}
 	params := loogo.NewRequestParams{
-		URL:        options.ApiRoot + "/annotations",
+		URL:        options.APIRoot + "/annotations",
 		Body:       bytes,
 		HTTPMethod: "POST",
 	}
 	options.Parser.NewRequest(params, doc)
-	return nil
 }
 
-func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) error {
+func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) {
 	defer wg.Done()
 	var m map[string]int
 	m = make(map[string]int)
 	m["a"] = 5
 	m["b"] = 6
-	if annotation.Annotation_type == "name" {
+	if annotation.AnnotationType == "name" {
 		model.Name = annotation.Value
 	} else {
 		model.Relevant, _ = strconv.ParseBool(annotation.Value)
@@ -184,14 +229,14 @@ func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	doc := loogo.Doc{}
 	bytes, err := json.Marshal(model)
 	if err != nil {
-		return err
+		log.Fatal(err)
+		return
 	}
 
 	params := loogo.NewRequestParams{
-		URL:        options.ApiRoot + "/annotations",
+		URL:        options.APIRoot + "/annotations",
 		Body:       bytes,
 		HTTPMethod: "PUT",
 	}
 	options.Parser.NewRequest(params, doc)
-	return nil
 }
