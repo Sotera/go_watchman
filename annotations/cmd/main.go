@@ -41,6 +41,6 @@ func main() {
 
 	err := annotations.ProcessAnnotationTypes(options)
 	if err != nil {
-		log.Fatal(fmt.Println(err))
+		log.Println(fmt.Println(err))
 	}
 }

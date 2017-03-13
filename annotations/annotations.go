@@ -58,11 +58,13 @@ func ProcessAnnotationTypes(options AnnotationOptions) error {
 		options.AnnotationType = options.AnnotationTypes[i]
 		annotations, err := FetchAnnotations(options)
 		if err != nil {
-			return err
+			log.Println(err)
+			continue
 		}
 		err = ProcessAnnotations(annotations, options)
 		if err != nil {
-			return err
+			log.Println(err)
+			continue
 		}
 	}
 
@@ -190,7 +192,7 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 
 	event, err := GetEvent(options, annotation)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 
@@ -204,7 +206,7 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	doc := loogo.Doc{}
 	bytes, err := json.Marshal(model)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 	params := loogo.NewRequestParams{
@@ -229,7 +231,7 @@ func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	doc := loogo.Doc{}
 	bytes, err := json.Marshal(model)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 

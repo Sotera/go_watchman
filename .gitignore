@@ -30,3 +30,4 @@ _testmain.go
 deploy/bin
 
 *.log
+annotations/cmd/debug
