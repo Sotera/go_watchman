@@ -60,11 +60,6 @@ func TestProcessAnnotationTypes(t *testing.T) {
 		t.Errorf("fetcher instance was nil not caught: %v", err)
 	}
 
-	err = ProcessAnnotationTypes(AnnotationOptions{})
-	if err == nil || err.Error() != "invalid options" {
-		t.Errorf("invalid options not caught %v", err)
-	}
-
 	options.Fetcher = fetcher
 	err = ProcessAnnotationTypes(options)
 	if err == nil || err.Error() != "no annotation types to process" {

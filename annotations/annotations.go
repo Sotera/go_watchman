@@ -44,9 +44,6 @@ type AnnotationOptions struct {
 }
 
 func ProcessAnnotationTypes(options AnnotationOptions) error {
-	if options.AnnotationAPIRoot == "" || options.EndTime == "" || options.StartTime == "" {
-		return errors.New("invalid options")
-	}
 	if options.Fetcher == nil {
 		return errors.New("fetcher instance was nil, please provide a fetcher")
 	}
