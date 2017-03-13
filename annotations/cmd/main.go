@@ -20,21 +20,21 @@ func main() {
 	options.StartTime = *startTime
 	options.EndTime = *endTime
 
-	options.AnnotationApiRoot = os.Getenv("ANNOTATION_API_ROOT")
-	if options.AnnotationApiRoot == "" {
-		options.AnnotationApiRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotations"
+	options.AnnotationAPIRoot = os.Getenv("ANNOTATION_API_ROOT")
+	if options.AnnotationAPIRoot == "" {
+		options.AnnotationAPIRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotations"
 	}
 
-	options.ApiRoot = os.Getenv("API_ROOT")
-	if options.ApiRoot == "" {
-		options.ApiRoot = "http://localhost:3003/api"
+	options.APIRoot = os.Getenv("API_ROOT")
+	if options.APIRoot == "" {
+		options.APIRoot = "http://localhost:3003/api"
 	}
 
 	parser := loogo.HTTPRequestParser{
 		Client: &loogo.HTTPClient{},
 	}
 
-	options.Annotation_types = []string{"name", "relevant"}
+	options.AnnotationTypes = []string{"name", "relevant"}
 	options.Fetcher = annotations.AnnotationFetcher{}
 	options.PagerFactory = annotations.PagerFactory{}
 	options.Parser = &parser

@@ -12,20 +12,20 @@ func TestFetchAnnotations(t *testing.T) {
 	pagerFactory := mockPagerFactory{}
 
 	annotation := Annotation{
-		Object_id:       "smevent:campaignID:eventID",
-		Reference_id:    "qcr.app.dev",
-		Annotation_type: "name",
-		Value:           "an event name",
-		Annotator:       "alex"}
+		ObjectID:       "smevent:campaignID:eventID",
+		ReferenceID:    "qcr.app.dev",
+		AnnotationType: "name",
+		Value:          "an event name",
+		Annotator:      "alex"}
 
 	fetcher.Annotations = []Annotation{annotation}
 
 	options := AnnotationOptions{
 		StartTime:         "",
 		EndTime:           "",
-		AnnotationApiRoot: "",
+		AnnotationAPIRoot: "",
 		AnnotationType:    "",
-		Annotation_types:  []string{"test"},
+		AnnotationTypes:   []string{"test"},
 		Fetcher:           fetcher,
 		PagerFactory:      pagerFactory,
 	}
@@ -50,10 +50,10 @@ func TestProcessAnnotationTypes(t *testing.T) {
 	options := AnnotationOptions{
 		StartTime:         "test",
 		EndTime:           "test",
-		AnnotationApiRoot: "test",
+		AnnotationAPIRoot: "test",
 		AnnotationType:    "test",
 		Fetcher:           nil,
-		Annotation_types:  nil}
+		AnnotationTypes:   nil}
 
 	err := ProcessAnnotationTypes(options)
 	if err == nil || err.Error() != "fetcher instance was nil, please provide a fetcher" {
@@ -71,14 +71,14 @@ func TestProcessAnnotationTypes(t *testing.T) {
 		t.Error("process did not return error with bad type array")
 	}
 
-	options.Annotation_types = annotation_types
+	options.AnnotationTypes = annotation_types
 
 	annotation := Annotation{
-		Object_id:       "smevent:campaignID:eventID",
-		Reference_id:    "qcr.app.dev",
-		Annotation_type: "name",
-		Value:           "an event name",
-		Annotator:       "alex"}
+		ObjectID:       "smevent:campaignID:eventID",
+		ReferenceID:    "qcr.app.dev",
+		AnnotationType: "name",
+		Value:          "an event name",
+		Annotator:      "alex"}
 
 	fetcher.Annotations = []Annotation{annotation}
 
@@ -134,32 +134,32 @@ func TestLoogoInterfaces(t *testing.T) {
 */
 func TestParseAnnotationId(t *testing.T) {
 
-	campaignId1, eventId1 := ParseAnnotationId("smevent:campaignID:eventID")
+	campaignId1, eventId1 := ParseAnnotationID("smevent:campaignID:eventID")
 	if campaignId1 != "campaignID" || eventId1 != "eventID" {
 		t.Errorf("unexpected error: %v %v", campaignId1, eventId1)
 	}
 
-	campaignId2, eventId2 := ParseAnnotationId("smevent::eventID")
+	campaignId2, eventId2 := ParseAnnotationID("smevent::eventID")
 	if campaignId2 != "" || eventId2 != "eventID" {
 		t.Errorf("unexpected error: %v %v", campaignId2, eventId2)
 	}
 
-	campaignId3, eventId3 := ParseAnnotationId("smevent::")
+	campaignId3, eventId3 := ParseAnnotationID("smevent::")
 	if campaignId3 != "" || eventId3 != "" {
 		t.Errorf("unexpected error: %v %v", campaignId3, eventId3)
 	}
 
-	campaignId4, eventId4 := ParseAnnotationId("smevent:")
+	campaignId4, eventId4 := ParseAnnotationID("smevent:")
 	if campaignId4 != "" || eventId4 != "" {
 		t.Errorf("unexpected error: %v %v", campaignId4, eventId4)
 	}
 
-	campaignId5, eventId5 := ParseAnnotationId("")
+	campaignId5, eventId5 := ParseAnnotationID("")
 	if campaignId5 != "" || eventId5 != "" {
 		t.Errorf("unexpected error: %v %v", campaignId5, eventId5)
 	}
 
-	campaignId6, eventId6 := ParseAnnotationId("smevent::eventID")
+	campaignId6, eventId6 := ParseAnnotationID("smevent::eventID")
 	if campaignId6 != "" || eventId6 != "eventID" {
 		t.Errorf("unexpected error: %v %v", campaignId6, eventId6)
 	}
