@@ -1,0 +1,7 @@
+version: '2.1'
+services:
+  supervisor:
+    image: sotera/go_watchman_deploy_test:1
+    hostname: deploy_test
+    environment:
+      - BOO=FAR
