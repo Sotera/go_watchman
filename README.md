@@ -8,7 +8,11 @@ Watchman processes for which go is specifically well suited
 
 ```
 cd deploy
-./build.sh annotations mytag [push]
+# use go exec as entrypoint
+./build.sh annotations 99 standalone [push]
+# use supervisord as entrypoint
+./build.sh annotations 99 supervisord [push]
+
 
 # on remote host
 # update docker-compose.yml
@@ -17,6 +21,6 @@ docker-compose up -d
 
 ## Deployment TODO
 
-* Use env vars in docker-compose to config your app.
-* Supervisor keeps ur app running. Do you want that?
+* Use env vars in docker-compose.yml to configure your app.
+* If using standalone mode, add cli options in docker run or compose file.
 * Mount supervisord.conf in docker-compose for custom supervisor conf.
