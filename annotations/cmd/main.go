@@ -34,7 +34,7 @@ func main() {
 		Client: &loogo.HTTPClient{},
 	}
 
-	options.AnnotationTypes = []string{"name", "relevant"}
+	options.AnnotationTypes = []string{"label", "relevant"}
 	options.Fetcher = annotations.AnnotationFetcher{}
 	options.PagerFactory = annotations.PagerFactory{}
 	options.Parser = &parser

@@ -195,7 +195,7 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 
 	model.Features = event["hashtags"]
 
-	if annotation.AnnotationType == "name" {
+	if annotation.AnnotationType == "label" {
 		model.Name = annotation.Value
 	} else {
 		model.Relevant, _ = strconv.ParseBool(annotation.Value)
@@ -220,7 +220,7 @@ func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	m = make(map[string]int)
 	m["a"] = 5
 	m["b"] = 6
-	if annotation.AnnotationType == "name" {
+	if annotation.AnnotationType == "label" {
 		model.Name = annotation.Value
 	} else {
 		model.Relevant, _ = strconv.ParseBool(annotation.Value)

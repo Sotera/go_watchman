@@ -14,7 +14,7 @@ func TestFetchAnnotations(t *testing.T) {
 	annotation := Annotation{
 		ObjectID:       "smevent:campaignID:eventID",
 		ReferenceID:    "qcr.app.dev",
-		AnnotationType: "name",
+		AnnotationType: "label",
 		Value:          "an event name",
 		Annotator:      "alex"}
 
@@ -45,7 +45,7 @@ func TestProcessAnnotationTypes(t *testing.T) {
 
 	fetcher := MockFetcher{}
 
-	annotation_types := []string{"name", "relevance"}
+	annotation_types := []string{"label", "relevance"}
 
 	options := AnnotationOptions{
 		StartTime:         "test",
@@ -71,7 +71,7 @@ func TestProcessAnnotationTypes(t *testing.T) {
 	annotation := Annotation{
 		ObjectID:       "smevent:campaignID:eventID",
 		ReferenceID:    "qcr.app.dev",
-		AnnotationType: "name",
+		AnnotationType: "label",
 		Value:          "an event name",
 		Annotator:      "alex"}
 
@@ -106,7 +106,7 @@ func TestLoogoInterfaces(t *testing.T) {
 	testAnnos := []Annotation{{
 		Object_id:       "smevent:campaignID:eventID",
 		Reference_id:    "qcr.app.dev",
-		Annotation_type: "name",
+		Annotation_type: "label",
 		Value:           "an event name",
 		Annotator:       "alex"}}
 
