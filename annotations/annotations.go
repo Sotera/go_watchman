@@ -35,6 +35,7 @@ type AnnotationOptions struct {
 	StartTime         string
 	EndTime           string
 	APIRoot           string
+	AnnotationRefID   string
 	AnnotationAPIRoot string
 	AnnotationType    string
 	AnnotationTypes   []string

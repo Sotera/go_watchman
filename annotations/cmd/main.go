@@ -25,6 +25,11 @@ func main() {
 		options.AnnotationAPIRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotations"
 	}
 
+	options.AnnotationRefID = os.Getenv("ANNOTATION_REF_ID")
+	if options.AnnotationRefID == "" {
+		options.AnnotationRefID = "qcr.app.dev"
+	}
+
 	options.APIRoot = os.Getenv("API_ROOT")
 	if options.APIRoot == "" {
 		options.APIRoot = "http://localhost:3003/api"

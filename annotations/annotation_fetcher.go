@@ -41,7 +41,7 @@ func getDateRange(options AnnotationOptions) (string, string) {
 func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, error) {
 
 	startStr, endStr := getDateRange(options)
-	url := fmt.Sprintf("%s/type/%s/?from_date=%s&to_date=%s", options.AnnotationAPIRoot, options.AnnotationType, startStr, endStr)
+	url := fmt.Sprintf("%s/refid/%s?type=%s&from_date=%s&to_date=%s", options.AnnotationAPIRoot, options.AnnotationRefID, options.AnnotationType, startStr, endStr)
 	println(url)
 
 	annotations := make([]Annotation, 0)
