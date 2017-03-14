@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 //HTTPRequester makes http requests.
@@ -45,7 +46,10 @@ func (c *HTTPClient) DoRequest(params NewRequestParams) ([]byte, error) {
 		params.HTTPMethod = "GET"
 	}
 
-	client := &http.Client{}
+	// Default client has no timeout
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
 
 	req, err := http.NewRequest(
 		params.HTTPMethod,

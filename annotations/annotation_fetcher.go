@@ -1,12 +1,12 @@
 package annotations
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/Sotera/go_watchman/loogo"
 )
 
 type Fetcher interface {
@@ -43,20 +43,18 @@ func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, erro
 	startStr, endStr := getDateRange(options)
 	url := fmt.Sprintf("%s/type/%s/?from_date=%s&to_date=%s", options.AnnotationAPIRoot, options.AnnotationType, startStr, endStr)
 	println(url)
-	res, err := http.Get(url)
-
-	if err != nil {
-		log.Println(fmt.Println(err))
-		return nil, err
-	}
 
 	annotations := make([]Annotation, 0)
 
-	decodeErr := json.NewDecoder(res.Body).Decode(&annotations)
-	if decodeErr != nil {
-		log.Println(fmt.Println(decodeErr))
-		return nil, decodeErr
+	parser := &loogo.HTTPRequestParser{
+		Client: &loogo.HTTPClient{},
 	}
+	err := parser.NewRequest(loogo.NewRequestParams{URL: url}, &annotations)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
 	//fake for now
 	/*annotations := []Annotation{{
 	ObjectID:       "smevent:MyTestCampaign:06c1909d-0ce3-4df3-86fd-2104c10a8581",
