@@ -1,12 +1,15 @@
 package mockery
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
 	"errors"
 
 	ann "github.com/Sotera/go_watchman/annotations"
 	"github.com/Sotera/go_watchman/loogo"
+	timeu "github.com/Sotera/go_watchman/util/time"
 )
 
 type watchmanEvent map[string]interface{}
@@ -19,19 +22,30 @@ type Mockery struct {
 
 // GetAnnotations returns mocked annotations based on existing watchman events.
 func (m Mockery) GetAnnotations(options ann.AnnotationOptions) ([]ann.Annotation, error) {
-
+	var err error
 	events := watchmanEvents{}
-
 	annotations := []ann.Annotation{}
 
-	err := m.Parser.NewRequest(
+	startTime, err := timeu.StrToUnixMs(time.RFC3339, options.StartTime)
+	if err != nil {
+		return nil, err
+	}
+	endTime, err := timeu.StrToUnixMs(time.RFC3339, options.EndTime)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.Parser.NewRequest(
 		loogo.NewRequestParams{
 			URL: options.APIRoot,
 			Params: loogo.QueryParams{
 				loogo.QueryParam{
 					Field:     "start_time_ms",
 					QueryType: "between",
-					Values:    []string{options.StartTime, options.EndTime},
+					Values: []string{
+						strconv.Itoa(startTime),
+						strconv.Itoa(endTime),
+					},
 				},
 			},
 		},
@@ -42,10 +56,8 @@ func (m Mockery) GetAnnotations(options ann.AnnotationOptions) ([]ann.Annotation
 	}
 
 	for _, evt := range events {
-		campids := evt["campaigns"].([]string)
-		if len(campids) == 0 {
-			campids = []string{"123", "456"}
-		}
+		// real campaign data is a list of objects. lets just use a fake list.
+		campids := generateStr(3, 5)
 
 		for _, cid := range campids {
 			var val string

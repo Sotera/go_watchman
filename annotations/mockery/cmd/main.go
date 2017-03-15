@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 
-	"fmt"
 	"net/http"
 
 	ann "github.com/Sotera/go_watchman/annotations"
@@ -34,17 +33,17 @@ func main() {
 	{
 		annotationsGroup.GET("/refid/:refid", func(c *gin.Context) {
 			// refid := c.Param("refid")
+			// make time inputs look like standardized time
 			options := ann.AnnotationOptions{
-				StartTime:      c.Query("from_date"),
-				EndTime:        c.Query("to_date"),
+				StartTime:      c.Query("from_date") + "T00:00:00Z",
+				EndTime:        c.Query("to_date") + "T00:00:00Z",
 				AnnotationType: c.Query("type"),
 				APIRoot:        eventsAPIRoot, // let's (mis)use this option.
 			}
 			annotations, err := mocker.GetAnnotations(options)
 			if err != nil {
-				log.Println(err)
-				msg := fmt.Sprintf("Error: %v", err)
-				c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+				log.Println("Error:", err)
+				c.JSON(http.StatusBadRequest, gin.H{"error": err})
 			} else {
 				c.JSON(http.StatusOK, &annotations)
 			}

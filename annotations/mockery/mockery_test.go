@@ -1,7 +1,6 @@
 package mockery
 
 import (
-	"reflect"
 	"testing"
 
 	a "github.com/Sotera/go_watchman/annotations"
@@ -12,7 +11,7 @@ type TestHTTPClient struct {
 }
 
 func (c *TestHTTPClient) DoRequest(params loogo.NewRequestParams) ([]byte, error) {
-	return []byte(`{"name":"riot","things":["a","b"]}`), nil
+	return []byte(`[{"id":"123"}]`), nil
 }
 
 func TestGetAnnotations(t *testing.T) {
@@ -29,15 +28,19 @@ func TestGetAnnotations(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []a.Annotation
+		want    string
 		wantErr bool
 	}{
 		{
 			"smoke test",
 			args{
-				a.AnnotationOptions{},
+				a.AnnotationOptions{
+					StartTime:      "2017-03-01T00:00:00Z",
+					EndTime:        "2017-03-02T00:00:00Z",
+					AnnotationType: "name",
+				},
 			},
-			[]a.Annotation{},
+			"123",
 			false,
 		},
 	}
@@ -48,8 +51,8 @@ func TestGetAnnotations(t *testing.T) {
 				t.Errorf("GetAnnotations() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetAnnotations() = %v, want %v", got, tt.want)
+			if got[0].EventID != tt.want {
+				t.Errorf("GetAnnotations() = %v, want %v", got[0].EventID, tt.want)
 			}
 		})
 	}
