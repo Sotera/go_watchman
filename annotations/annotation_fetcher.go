@@ -5,8 +5,6 @@ import (
 	"log"
 	"strconv"
 	"time"
-
-	"github.com/Sotera/go_watchman/loogo"
 )
 
 type Fetcher interface {
@@ -40,7 +38,7 @@ func getDateRange(options AnnotationOptions) (string, string) {
 
 func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, error) {
 
-	startStr, endStr := getDateRange(options)
+	/*startStr, endStr := getDateRange(options)
 	url := fmt.Sprintf("%s/refid/%s?type=%s&from_date=%s&to_date=%s", options.AnnotationAPIRoot, options.AnnotationRefID, options.AnnotationType, startStr, endStr)
 	println(url)
 
@@ -53,15 +51,14 @@ func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, erro
 	if err != nil {
 		log.Println(err)
 		return nil, err
-	}
+	}*/
 
 	//fake for now
-	/*annotations := []Annotation{{
-	ObjectID:       "smevent:MyTestCampaign:06c1909d-0ce3-4df3-86fd-2104c10a8581",
-	ReferenceID:    "qcr.app.dev",
-	AnnotationType: "label",
-	Value:          "test3",
-	Annotator:      "alex"}}*/
-	fmt.Println("annotations:", len(annotations))
+	annotations := []Annotation{{
+		ObjectID:       "smevent:MyTestCampaign:06c1909d-0ce3-4df3-86fd-2104c10a8581",
+		ReferenceID:    "qcr.app.dev",
+		AnnotationType: "label",
+		Value:          "test3",
+		Annotator:      "alex"}}
 	return annotations, nil
 }
