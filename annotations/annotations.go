@@ -40,7 +40,7 @@ type AnnotationOptions struct {
 	AnnotationType    string
 	AnnotationTypes   []string
 	Fetcher           Fetcher
-	Parser            loogo.RequestParser
+	ParserFactory     LoogoParserFactory
 	PagerFactory      LoogoPagerFactory
 }
 
@@ -96,6 +96,14 @@ func ParseAnnotationID(annotation_id string) (campaign string, event_id string) 
 
 func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
 	var wg sync.WaitGroup
+	if options.PagerFactory == nil {
+		return errors.New("options.PagerFactory was nil")
+	}
+
+	if options.ParserFactory == nil {
+		return errors.New("options.ParserFactory was nil")
+	}
+
 	for i := 0; i < len(annotations); i++ {
 		annotation := annotations[i]
 		annotation.CampaignID, annotation.EventID = ParseAnnotationID(annotation.ObjectID)
@@ -176,16 +184,19 @@ func GetEvent(eventChannel chan loogo.Doc, options AnnotationOptions, annotation
 	if err != nil {
 		fmt.Println(err)
 		eventChannel <- nil
+		return
 	}
 
 	if len(page) > 1 {
 		fmt.Println(errors.New("loogo did not honor page size"))
 		eventChannel <- nil
+		return
 	}
 
 	if len(page) < 1 {
 		fmt.Println(errors.New("event:" + annotation.EventID + " not found"))
 		eventChannel <- nil
+		return
 	}
 
 	eventChannel <- page[0]
@@ -196,6 +207,7 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	model := AnnotationModel{}
 	model.Campaign = annotation.CampaignID
 	model.Event = annotation.EventID
+	println(annotation.EventID)
 
 	eventChannel := make(chan loogo.Doc)
 	go GetEvent(eventChannel, options, annotation)
@@ -224,7 +236,7 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 		Body:       bytes,
 		HTTPMethod: "POST",
 	}
-	options.Parser.NewRequest(params, doc)
+	options.ParserFactory.Generate().NewRequest(params, doc)
 }
 
 func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) {
@@ -250,5 +262,5 @@ func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 		Body:       bytes,
 		HTTPMethod: "PUT",
 	}
-	options.Parser.NewRequest(params, doc)
+	options.ParserFactory.Generate().NewRequest(params, doc)
 }
