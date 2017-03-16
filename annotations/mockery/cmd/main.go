@@ -14,12 +14,13 @@ import (
 
 var eventsAPIRoot = os.Getenv("EVENTS_API_ROOT")
 
-func main() {
-
+func init() {
 	if eventsAPIRoot == "" {
 		eventsAPIRoot = "http://localhost:3000/api/events"
 	}
+}
 
+func main() {
 	r := gin.Default()
 
 	parser := &loogo.HTTPRequestParser{
