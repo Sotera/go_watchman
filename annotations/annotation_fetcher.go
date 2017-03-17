@@ -62,6 +62,5 @@ func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, erro
 	AnnotationType: "label",
 	Value:          "test3",
 	Annotator:      "alex"}}*/
-	fmt.Println("annotations:", len(annotations))
 	return annotations, nil
 }

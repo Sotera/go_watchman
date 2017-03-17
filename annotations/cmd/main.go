@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/Sotera/go_watchman/annotations"
-	"github.com/Sotera/go_watchman/loogo"
 )
 
 func main() {
@@ -35,14 +34,10 @@ func main() {
 		options.APIRoot = "http://localhost:3003/api"
 	}
 
-	parser := loogo.HTTPRequestParser{
-		Client: &loogo.HTTPClient{},
-	}
-
 	options.AnnotationTypes = []string{"label", "relevant"}
 	options.Fetcher = annotations.AnnotationFetcher{}
 	options.PagerFactory = annotations.PagerFactory{}
-	options.Parser = &parser
+	options.ParserFactory = annotations.ParserFactory{}
 
 	err := annotations.ProcessAnnotationTypes(options)
 	if err != nil {

@@ -1,6 +1,7 @@
 package annotations
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Sotera/go_watchman/loogo"
@@ -9,7 +10,7 @@ import (
 func TestFetchAnnotations(t *testing.T) {
 	fetcher := MockFetcher{}
 
-	pagerFactory := mockPagerFactory{}
+	pagerFactory := MockPagerFactory{}
 
 	annotation := Annotation{
 		ObjectID:       "smevent:campaignID:eventID",
@@ -73,7 +74,10 @@ func TestProcessAnnotationTypes(t *testing.T) {
 		ReferenceID:    "qcr.app.dev",
 		AnnotationType: "label",
 		Value:          "an event name",
-		Annotator:      "alex"}
+		Annotator:      "alex",
+		EventID:        "eventID",
+		CampaignID:     "campaignID",
+	}
 
 	fetcher.Annotations = []Annotation{annotation}
 
@@ -85,7 +89,7 @@ func TestProcessAnnotationTypes(t *testing.T) {
 }
 
 func TestLoogoInterfaces(t *testing.T) {
-	pagerFactory := mockPagerFactory{}
+	pagerFactory := MockPagerFactory{}
 	pager, err := pagerFactory.Generate(loogo.NewPagerParams{
 		URL:      "http://localhost:3003/api/annotations",
 		Params:   nil,
@@ -100,33 +104,58 @@ func TestLoogoInterfaces(t *testing.T) {
 	println(value)
 }
 
-/*func TestProcessAnnotations(t *testing.T) {
+func TestProcessAnnotations(t *testing.T) {
 	//func process_annotations(annotations []Annotation, pagerFactory LoogoPagerFactory) error {
+	fetcher := MockFetcher{}
 
 	testAnnos := []Annotation{{
-		Object_id:       "smevent:campaignID:eventID",
-		Reference_id:    "qcr.app.dev",
-		Annotation_type: "label",
-		Value:           "an event name",
-		Annotator:       "alex"}}
+		ObjectID:       "smevent:campaignID:eventID",
+		ReferenceID:    "qcr.app.dev",
+		AnnotationType: "label",
+		Value:          "an event name",
+		Annotator:      "alex"}}
 
-	pagerFactory := mockPagerFactory{}
+	pagerFactory := MockPagerFactory{}
+	parserFactory := MockParserFactory{}
 	options := AnnotationOptions{
 		StartTime:         "",
 		EndTime:           "",
-		AnnotationApiRoot: "",
+		AnnotationAPIRoot: "",
 		AnnotationType:    "",
-		Annotation_types:  []string{"test"},
-		Fetcher:           nil,
-		PagerFactory:      pagerFactory,
+		AnnotationTypes:   []string{"label", "relevant"},
+		Fetcher:           fetcher,
 	}
 
 	err := ProcessAnnotations(testAnnos, options)
+	if err == nil {
+		t.Errorf("error expected: %v", err)
+	}
+
+	options.PagerFactory = pagerFactory
+
+	err = ProcessAnnotations(testAnnos, options)
+	if err == nil {
+		t.Errorf("error expected: %v", err)
+	}
+
+	options.ParserFactory = parserFactory
+	err = ProcessAnnotations(testAnnos, options)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	testAnnos[0].AnnotationType = "relevant"
+	testAnnos[0].Value = "false"
+	options.AnnotationType = "relevant"
+	options.PagerFactory = MockPagerFactory{
+		ReturnEmpty: true,
+	}
+	err = ProcessAnnotations(testAnnos, options)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
-*/
+
 func TestParseAnnotationId(t *testing.T) {
 
 	campaignId1, eventId1 := ParseAnnotationID("smevent:campaignID:eventID")
@@ -168,15 +197,43 @@ func (af MockFetcher) Fetch(options AnnotationOptions) ([]Annotation, error) {
 	return af.Annotations, nil
 }
 
-type mockPagerFactory struct{}
-
-func (pf mockPagerFactory) Generate(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
-	return mock_pager{}, nil
+type MockPagerFactory struct {
+	ReturnEmpty bool
 }
 
-type mock_pager struct{}
+func (pf MockPagerFactory) Generate(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
+	pager := MockPager{}
+	pager.ReturnEmpty = pf.ReturnEmpty
+	if strings.Contains(params.URL, "/events") {
+		println("sending event")
+		pager.ReturnEmpty = false
+		pager.ReturnEvent = true
+	}
 
-func (p mock_pager) GetNext() (loogo.Docs, error) {
+	return pager, nil
+}
+
+type MockPager struct {
+	ReturnEmpty bool
+	ReturnEvent bool
+}
+
+func (p MockPager) GetNext() (loogo.Docs, error) {
+	if p.ReturnEmpty {
+		println("returning empty doc")
+		return loogo.Docs{}, nil
+	}
+
+	if p.ReturnEvent {
+		println("returning event doc")
+		return loogo.Docs{
+			loogo.Doc{
+				"id": "eventID",
+			},
+		}, nil
+	}
+
+	println("returning annotation model doc")
 	return loogo.Docs{
 		loogo.Doc{
 			"campaign": "string",
@@ -187,8 +244,27 @@ func (p mock_pager) GetNext() (loogo.Docs, error) {
 			"id":       "string",
 		},
 	}, nil
+
 }
 
-func (p mock_pager) PageOver(docFunc func(doc loogo.Doc, done func())) error {
+func (p MockPager) PageOver(docFunc func(doc loogo.Doc, done func())) error {
 	return nil
 }
+
+type MockParserFactory struct{}
+
+func (pf MockParserFactory) Generate() loogo.RequestParser {
+	return &MockParser{}
+}
+
+type MockParser struct{}
+
+func (r *MockParser) NewRequest(params loogo.NewRequestParams, result interface{}) error {
+	doc := loogo.Doc{}
+	doc["_id"] = "eventID"
+	doc["hashtags"] = []string{}
+	result = doc
+	return nil
+}
+
+type MockRequester struct{}
