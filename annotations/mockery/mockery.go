@@ -63,7 +63,7 @@ func (m Mockery) GetAnnotations(options ann.AnnotationOptions) ([]ann.Annotation
 			var val string
 			if options.AnnotationType == "relevant" {
 				val = takeOne([]string{"true", "false"})
-			} else if options.AnnotationType == "name" {
+			} else if options.AnnotationType == "label" {
 				val = takeOne([]string{})
 			} else {
 				return nil, errors.New("unknown annotation type:" + options.AnnotationType)
@@ -75,7 +75,7 @@ func (m Mockery) GetAnnotations(options ann.AnnotationOptions) ([]ann.Annotation
 					Annotator:      "pepe",
 					CampaignID:     cid,
 					EventID:        evt["id"].(string),
-					ObjectID:       strings.Join([]string{"smevent", evt["id"].(string), cid}, ":"),
+					ObjectID:       strings.Join([]string{"smevent", cid, evt["id"].(string)}, ":"),
 					ReferenceID:    "qcr.app.dev",
 					Value:          val,
 				},

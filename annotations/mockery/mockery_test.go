@@ -37,7 +37,7 @@ func TestGetAnnotations(t *testing.T) {
 				a.AnnotationOptions{
 					StartTime:      "2017-03-01T00:00:00Z",
 					EndTime:        "2017-03-02T00:00:00Z",
-					AnnotationType: "name",
+					AnnotationType: "label",
 				},
 			},
 			"123",
