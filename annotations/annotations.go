@@ -94,7 +94,19 @@ func ParseAnnotationID(annotation_id string) (campaign string, event_id string) 
 	return
 }
 
-func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
+type AO struct {
+	pagerFactory func(loogo.NewPagerParams) (loogo.PagerInterface, error)
+}
+
+func CallProcessAnnotations() {
+	factoryFunc := func(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
+		return loogo.NewPager(params)
+	}
+	ao := AO{factoryFunc}
+	// ao.ProcessAnnotations(...)
+}
+
+func (ao AO) ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
 	var wg sync.WaitGroup
 	if options.PagerFactory == nil {
 		return errors.New("options.PagerFactory was nil")
@@ -121,7 +133,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 			},
 		}
 
-		pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
+		pager, err := ao.pagerFactory(loogo.NewPagerParams{
 			URL:      options.APIRoot + "/annotations",
 			Params:   params,
 			PageSize: 1,
