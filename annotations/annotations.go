@@ -161,46 +161,19 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 }
 
 func GetEvent(eventChannel chan loogo.Doc, options AnnotationOptions, annotation Annotation) {
-	params := loogo.QueryParams{
-		loogo.QueryParam{
-			QueryType: "Eq",
-			Field:     "_id",
-			Values:    []string{annotation.EventID},
-		},
-	}
+	url := fmt.Sprintf("%s/events/%s", options.APIRoot, annotation.EventID)
+	println(url)
 
-	pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
-		URL:      options.APIRoot + "/events",
-		Params:   params,
-		PageSize: 1,
-	})
+	event := loogo.Doc{}
 
+	parser := options.ParserFactory.Generate()
+	err := parser.NewRequest(loogo.NewRequestParams{URL: url}, &event)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		eventChannel <- nil
 		return
 	}
-
-	page, err := pager.GetNext()
-	if err != nil {
-		fmt.Println(err)
-		eventChannel <- nil
-		return
-	}
-
-	if len(page) > 1 {
-		fmt.Println(errors.New("loogo did not honor page size"))
-		eventChannel <- nil
-		return
-	}
-
-	if len(page) < 1 {
-		fmt.Println(errors.New("event:" + annotation.EventID + " not found"))
-		eventChannel <- nil
-		return
-	}
-
-	eventChannel <- page[0]
+	eventChannel <- event
 }
 
 func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
@@ -213,14 +186,12 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	eventChannel := make(chan loogo.Doc)
 	go GetEvent(eventChannel, options, annotation)
 	event := <-eventChannel
-
 	if event == nil {
 		log.Println("get event returned no event, event not found")
 		return
 	}
 
 	model.Features = event["hashtags"]
-	print(event)
 
 	if annotation.AnnotationType == "label" {
 		model.Name = annotation.Value

@@ -46,9 +46,7 @@ func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, erro
 
 	annotations := make([]Annotation, 0)
 
-	parser := &loogo.HTTPRequestParser{
-		Client: &loogo.HTTPClient{},
-	}
+	parser := options.ParserFactory.Generate()
 	err := parser.NewRequest(loogo.NewRequestParams{URL: url}, &annotations)
 	if err != nil {
 		log.Println(err)
