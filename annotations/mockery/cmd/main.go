@@ -6,6 +6,8 @@ import (
 
 	"net/http"
 
+	"fmt"
+
 	ann "github.com/Sotera/go_watchman/annotations"
 	mock "github.com/Sotera/go_watchman/annotations/mockery"
 	"github.com/Sotera/go_watchman/loogo"
@@ -44,7 +46,7 @@ func main() {
 			annotations, err := mocker.GetAnnotations(options)
 			if err != nil {
 				log.Println("Error:", err)
-				c.JSON(http.StatusBadRequest, gin.H{"error": err})
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
 			} else {
 				c.JSON(http.StatusOK, &annotations)
 			}
