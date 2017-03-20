@@ -2,22 +2,24 @@
 
 set -o errexit
 
-if [ "$#" -lt 3 ]; then
-  echo "usage: $0 {project} {tag} {supervisord | standalone} [push]"
+if [ "$#" -lt 4 ]; then
+  echo "Builds a go project at specified path, then docker builds it in supervisord or standalone mode, and optionally pushes to docker hub."
+  echo "usage: $0 {docker-proj-name} {docker-tag} {path-from-root} {supervisord | standalone} [push]"
   exit 1
 fi
 
-proj=$1
+name=$1
 tag=$2
-mode=$3
-docker_proj=go_watchman_$proj:$tag
+path=$3
+mode=$4
+docker_name=go_watchman_$name:$tag
 
 set -x
 
-go test ../$proj
-# executables expected in 'cmd' dir
-go build -o bin/$proj github.com/Sotera/go_watchman/$proj/cmd
-docker build -f Dockerfile-$mode -t sotera/$docker_proj --build-arg PROJ=$proj .
-if [ "$4" == "push" ]; then
-  docker push sotera/$docker_proj
+go test ../$path
+
+go build -o bin/$name github.com/Sotera/go_watchman/$path
+docker build -f Dockerfile-$mode -t sotera/$docker_name --build-arg BIN_NAME=$name .
+if [ "$5" == "push" ]; then
+  docker push sotera/$docker_name
 fi
