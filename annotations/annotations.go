@@ -178,6 +178,7 @@ func GetEvent(eventChannel chan loogo.Doc, options AnnotationOptions, annotation
 	if err != nil {
 		fmt.Println(err)
 		eventChannel <- nil
+		return
 	}
 
 	page, err := pager.GetNext()
@@ -219,6 +220,7 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 	}
 
 	model.Features = event["hashtags"]
+	print(event)
 
 	if annotation.AnnotationType == "label" {
 		model.Name = annotation.Value
