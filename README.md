@@ -9,9 +9,9 @@ Watchman processes for which go is specifically well suited
 ```
 cd deploy
 # use go exec as entrypoint
-./build.sh annotations 99 standalone [push]
+./build.sh annotations_mock_server 99 annotations/mockery/cmd standalone [push]
 # use supervisord as entrypoint
-./build.sh annotations 99 supervisord [push]
+./build.sh annotations_mock_server 99 annotations/mockery/cmd supervisord [push]
 
 
 # on remote host
