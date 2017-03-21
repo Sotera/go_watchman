@@ -36,7 +36,6 @@ func main() {
 
 	options.AnnotationTypes = []string{"label", "relevant"}
 	options.Fetcher = annotations.AnnotationFetcher{}
-	options.PagerFactory = annotations.PagerFactory{}
 	options.ParserFactory = annotations.ParserFactory{}
 
 	err := annotations.ProcessAnnotationTypes(options)
