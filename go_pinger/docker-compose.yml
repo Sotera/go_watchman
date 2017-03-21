@@ -1,15 +1,20 @@
 version: '2.1'
 services:
-  supervisor:
-    image: lukewendling/supervisor:1
-    hostname: supervisor
+  api:
+    image: sotera/go_watchman_pinger_api:1
+    hostname: api
     environment:
-      - GIN_MODE=release
+      - GIN_MODE=debug
       - DB_HOST=172.17.0.1
       - PORT=3004
     ports:
       - "3004:3004"
     volumes:
-      - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
-      - .:/app
-      - ./request/conf.toml:/app/request/conf.toml
+      - ./go_watchman/go_pinger/app:/etc/supervisor/app
+  request:
+    image: sotera/go_watchman_pinger_request:1
+    hostname: request
+    depends_on:
+      - api
+    volumes:
+      - ./conf.toml:/etc/supervisor/conf.d/conf.toml
