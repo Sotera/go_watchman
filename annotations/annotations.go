@@ -95,10 +95,14 @@ func ParseAnnotationID(annotation_id string) (campaign string, event_id string) 
 }
 
 type AO struct {
+	// we need a mockable instance generator, to created instances in a nested loop.
+	// a 'normal' type won't work: we need to create many instances.
+	// instead, use a func type to create new instances of a Pager interface.
 	createPager func(loogo.NewPagerParams) (loogo.PagerInterface, error)
 }
 
 func CallProcessAnnotations() {
+	// tell AO how to create pagers.
 	createPager := func(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
 		return loogo.NewPager(params)
 	}
