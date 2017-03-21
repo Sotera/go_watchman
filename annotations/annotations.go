@@ -41,7 +41,6 @@ type AnnotationOptions struct {
 	AnnotationTypes   []string
 	Fetcher           Fetcher
 	ParserFactory     LoogoParserFactory
-	PagerFactory      LoogoPagerFactory
 }
 
 func ProcessAnnotationTypes(options AnnotationOptions) error {
@@ -112,9 +111,6 @@ func CallProcessAnnotations() {
 
 func (ao AO) ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
 	var wg sync.WaitGroup
-	if options.PagerFactory == nil {
-		return errors.New("options.PagerFactory was nil")
-	}
 
 	if options.ParserFactory == nil {
 		return errors.New("options.ParserFactory was nil")
