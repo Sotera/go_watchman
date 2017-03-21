@@ -42,11 +42,13 @@ func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, erro
 
 	startStr, endStr := getDateRange(options)
 	url := fmt.Sprintf("%s/refid/%s?type=%s&from_date=%s&to_date=%s", options.AnnotationAPIRoot, options.AnnotationRefID, options.AnnotationType, startStr, endStr)
-	println(url)
 
 	annotations := make([]Annotation, 0)
 
-	parser := options.ParserFactory.Generate()
+	//TODO: needs to be moved to calling func if we want to test this func.
+	parser := &loogo.HTTPRequestParser{
+		Client: &loogo.HTTPClient{},
+	}
 	err := parser.NewRequest(loogo.NewRequestParams{URL: url}, &annotations)
 	if err != nil {
 		log.Println(err)
