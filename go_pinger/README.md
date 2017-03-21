@@ -15,10 +15,9 @@ cp conf.toml.example conf.toml
 ### Deploy
 
 ```
-# Make sure you've built the binaries and committed
-git clone ...
-cd go-pinger
+git clone https://github.com/Sotera/go_watchman
+# create docker-compose.yml
 # create docker-compose.override.yml if needed
-# create ./request/conf.toml
+# create conf.toml
 docker-compose up -d
 ```
