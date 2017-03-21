@@ -95,14 +95,14 @@ func ParseAnnotationID(annotation_id string) (campaign string, event_id string) 
 }
 
 type AO struct {
-	pagerFactory func(loogo.NewPagerParams) (loogo.PagerInterface, error)
+	createPager func(loogo.NewPagerParams) (loogo.PagerInterface, error)
 }
 
 func CallProcessAnnotations() {
-	factoryFunc := func(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
+	createPager := func(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
 		return loogo.NewPager(params)
 	}
-	ao := AO{factoryFunc}
+	ao := AO{createPager}
 	// ao.ProcessAnnotations(...)
 }
 
@@ -133,7 +133,7 @@ func (ao AO) ProcessAnnotations(annotations []Annotation, options AnnotationOpti
 			},
 		}
 
-		pager, err := ao.pagerFactory(loogo.NewPagerParams{
+		pager, err := ao.createPager(loogo.NewPagerParams{
 			URL:      options.APIRoot + "/annotations",
 			Params:   params,
 			PageSize: 1,
