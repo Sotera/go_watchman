@@ -9,8 +9,6 @@ import (
 func TestFetchAnnotations(t *testing.T) {
 	fetcher := MockFetcher{}
 
-	// pagerFactory := MockPagerFactory{}
-
 	annotation := Annotation{
 		ObjectID:       "smevent:campaignID:eventID",
 		ReferenceID:    "qcr.app.dev",
@@ -48,6 +46,7 @@ func TestProcessAnnotationTypes(t *testing.T) {
 	annotationTypes := []string{"label", "relevance"}
 
 	options := AnnotationOptions{
+		APIRoot:           "http://test.com",
 		StartTime:         "test",
 		EndTime:           "test",
 		AnnotationAPIRoot: "test",
