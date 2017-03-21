@@ -1,7 +1,6 @@
 package annotations
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/Sotera/go_watchman/loogo"
@@ -10,7 +9,7 @@ import (
 func TestFetchAnnotations(t *testing.T) {
 	fetcher := MockFetcher{}
 
-	pagerFactory := MockPagerFactory{}
+	// pagerFactory := MockPagerFactory{}
 
 	annotation := Annotation{
 		ObjectID:       "smevent:campaignID:eventID",
@@ -22,13 +21,13 @@ func TestFetchAnnotations(t *testing.T) {
 	fetcher.Annotations = []Annotation{annotation}
 
 	options := AnnotationOptions{
+		APIRoot:           "http://test.com",
 		StartTime:         "",
 		EndTime:           "",
 		AnnotationAPIRoot: "",
 		AnnotationType:    "",
 		AnnotationTypes:   []string{"test"},
 		Fetcher:           fetcher,
-		PagerFactory:      pagerFactory,
 	}
 
 	val, err := FetchAnnotations(options)
@@ -46,7 +45,7 @@ func TestProcessAnnotationTypes(t *testing.T) {
 
 	fetcher := MockFetcher{}
 
-	annotation_types := []string{"label", "relevance"}
+	annotationTypes := []string{"label", "relevance"}
 
 	options := AnnotationOptions{
 		StartTime:         "test",
@@ -67,7 +66,7 @@ func TestProcessAnnotationTypes(t *testing.T) {
 		t.Error("process did not return error with bad type array")
 	}
 
-	options.AnnotationTypes = annotation_types
+	options.AnnotationTypes = annotationTypes
 
 	annotation := Annotation{
 		ObjectID:       "smevent:campaignID:eventID",
@@ -89,23 +88,18 @@ func TestProcessAnnotationTypes(t *testing.T) {
 }
 
 func TestLoogoInterfaces(t *testing.T) {
-	pagerFactory := MockPagerFactory{}
-	pager, err := pagerFactory.Generate(loogo.NewPagerParams{
-		URL:      "http://localhost:3003/api/annotations",
-		Params:   nil,
-		PageSize: 1,
-	})
+	pager := loogo.TestPager{}
 	page, err := pager.GetNext()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	value := page[0]["id"].(string)
-	println(value)
+	if page[0]["id"].(string) != "123" {
+		t.Errorf("incorrect value")
+	}
 }
 
 func TestProcessAnnotations(t *testing.T) {
-	//func process_annotations(annotations []Annotation, pagerFactory LoogoPagerFactory) error {
 	fetcher := MockFetcher{}
 
 	testAnnos := []Annotation{{
@@ -115,9 +109,8 @@ func TestProcessAnnotations(t *testing.T) {
 		Value:          "an event name",
 		Annotator:      "alex"}}
 
-	pagerFactory := MockPagerFactory{}
-	parserFactory := MockParserFactory{}
 	options := AnnotationOptions{
+		APIRoot:           "http://test.com",
 		StartTime:         "",
 		EndTime:           "",
 		AnnotationAPIRoot: "",
@@ -126,20 +119,13 @@ func TestProcessAnnotations(t *testing.T) {
 		Fetcher:           fetcher,
 	}
 
-	err := ProcessAnnotations(testAnnos, options)
-	if err == nil {
-		t.Errorf("error expected: %v", err)
+	createPager := func(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
+		return &MockPager{}, nil
 	}
+	parser := &MockParser{}
+	am := &AnnotationMaker{createPager, parser}
 
-	options.PagerFactory = pagerFactory
-
-	err = ProcessAnnotations(testAnnos, options)
-	if err == nil {
-		t.Errorf("error expected: %v", err)
-	}
-
-	options.ParserFactory = parserFactory
-	err = ProcessAnnotations(testAnnos, options)
+	err := am.ProcessAnnotations(testAnnos, options)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -147,10 +133,8 @@ func TestProcessAnnotations(t *testing.T) {
 	testAnnos[0].AnnotationType = "relevant"
 	testAnnos[0].Value = "false"
 	options.AnnotationType = "relevant"
-	options.PagerFactory = MockPagerFactory{
-		ReturnEmpty: true,
-	}
-	err = ProcessAnnotations(testAnnos, options)
+
+	err = am.ProcessAnnotations(testAnnos, options)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -158,34 +142,34 @@ func TestProcessAnnotations(t *testing.T) {
 
 func TestParseAnnotationId(t *testing.T) {
 
-	campaignId1, eventId1 := ParseAnnotationID("smevent:campaignID:eventID")
-	if campaignId1 != "campaignID" || eventId1 != "eventID" {
-		t.Errorf("unexpected error: %v %v", campaignId1, eventId1)
+	campaignID1, eventID1 := ParseAnnotationID("smevent:campaignID:eventID")
+	if campaignID1 != "campaignID" || eventID1 != "eventID" {
+		t.Errorf("unexpected error: %v %v", campaignID1, eventID1)
 	}
 
-	campaignId2, eventId2 := ParseAnnotationID("smevent::eventID")
-	if campaignId2 != "" || eventId2 != "eventID" {
-		t.Errorf("unexpected error: %v %v", campaignId2, eventId2)
+	campaignID2, eventID2 := ParseAnnotationID("smevent::eventID")
+	if campaignID2 != "" || eventID2 != "eventID" {
+		t.Errorf("unexpected error: %v %v", campaignID2, eventID2)
 	}
 
-	campaignId3, eventId3 := ParseAnnotationID("smevent::")
-	if campaignId3 != "" || eventId3 != "" {
-		t.Errorf("unexpected error: %v %v", campaignId3, eventId3)
+	campaignID3, eventID3 := ParseAnnotationID("smevent::")
+	if campaignID3 != "" || eventID3 != "" {
+		t.Errorf("unexpected error: %v %v", campaignID3, eventID3)
 	}
 
-	campaignId4, eventId4 := ParseAnnotationID("smevent:")
-	if campaignId4 != "" || eventId4 != "" {
-		t.Errorf("unexpected error: %v %v", campaignId4, eventId4)
+	campaignID4, eventID4 := ParseAnnotationID("smevent:")
+	if campaignID4 != "" || eventID4 != "" {
+		t.Errorf("unexpected error: %v %v", campaignID4, eventID4)
 	}
 
-	campaignId5, eventId5 := ParseAnnotationID("")
-	if campaignId5 != "" || eventId5 != "" {
-		t.Errorf("unexpected error: %v %v", campaignId5, eventId5)
+	campaignID5, eventID5 := ParseAnnotationID("")
+	if campaignID5 != "" || eventID5 != "" {
+		t.Errorf("unexpected error: %v %v", campaignID5, eventID5)
 	}
 
-	campaignId6, eventId6 := ParseAnnotationID("smevent::eventID")
-	if campaignId6 != "" || eventId6 != "eventID" {
-		t.Errorf("unexpected error: %v %v", campaignId6, eventId6)
+	campaignID6, eventID6 := ParseAnnotationID("smevent::eventID")
+	if campaignID6 != "" || eventID6 != "eventID" {
+		t.Errorf("unexpected error: %v %v", campaignID6, eventID6)
 	}
 }
 
@@ -197,22 +181,6 @@ func (af MockFetcher) Fetch(options AnnotationOptions) ([]Annotation, error) {
 	return af.Annotations, nil
 }
 
-type MockPagerFactory struct {
-	ReturnEmpty bool
-}
-
-func (pf MockPagerFactory) Generate(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
-	pager := MockPager{}
-	pager.ReturnEmpty = pf.ReturnEmpty
-	if strings.Contains(params.URL, "/events") {
-		println("sending event")
-		pager.ReturnEmpty = false
-		pager.ReturnEvent = true
-	}
-
-	return pager, nil
-}
-
 type MockPager struct {
 	ReturnEmpty bool
 	ReturnEvent bool
@@ -220,12 +188,12 @@ type MockPager struct {
 
 func (p MockPager) GetNext() (loogo.Docs, error) {
 	if p.ReturnEmpty {
-		println("returning empty doc")
+		// println("returning empty doc")
 		return loogo.Docs{}, nil
 	}
 
 	if p.ReturnEvent {
-		println("returning event doc")
+		// println("returning event doc")
 		return loogo.Docs{
 			loogo.Doc{
 				"id": "eventID",
@@ -233,7 +201,7 @@ func (p MockPager) GetNext() (loogo.Docs, error) {
 		}, nil
 	}
 
-	println("returning annotation model doc")
+	// println("returning annotation model doc")
 	return loogo.Docs{
 		loogo.Doc{
 			"campaign": "string",
@@ -251,20 +219,12 @@ func (p MockPager) PageOver(docFunc func(doc loogo.Doc, done func())) error {
 	return nil
 }
 
-type MockParserFactory struct{}
-
-func (pf MockParserFactory) Generate() loogo.RequestParser {
-	return &MockParser{}
-}
-
 type MockParser struct{}
 
 func (r *MockParser) NewRequest(params loogo.NewRequestParams, result interface{}) error {
 	doc := loogo.Doc{}
 	doc["_id"] = "eventID"
-	doc["hashtags"] = []string{}
+	doc["hashtags"] = [][]interface{}{}
 	result = doc
 	return nil
 }
-
-type MockRequester struct{}
