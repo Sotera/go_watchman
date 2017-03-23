@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/Sotera/go_watchman/annotations"
 )
@@ -21,7 +22,9 @@ func main() {
 
 	options.AnnotationAPIRoot = os.Getenv("ANNOTATION_API_ROOT")
 	if options.AnnotationAPIRoot == "" {
-		options.AnnotationAPIRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotations"
+		options.AnnotationAPIRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotation"
+	} else {
+		options.AnnotationAPIRoot = strings.TrimRight(options.AnnotationAPIRoot, "/")
 	}
 
 	options.AnnotationRefID = os.Getenv("ANNOTATION_REF_ID")
@@ -32,12 +35,12 @@ func main() {
 	options.APIRoot = os.Getenv("API_ROOT")
 	if options.APIRoot == "" {
 		options.APIRoot = "http://localhost:3003/api"
+	} else {
+		options.APIRoot = strings.TrimRight(options.APIRoot, "/")
 	}
 
 	options.AnnotationTypes = []string{"label", "relevant"}
 	options.Fetcher = annotations.AnnotationFetcher{}
-	options.PagerFactory = annotations.PagerFactory{}
-	options.ParserFactory = annotations.ParserFactory{}
 
 	err := annotations.ProcessAnnotationTypes(options)
 	if err != nil {

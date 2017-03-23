@@ -28,6 +28,7 @@ _testmain.go
 
 # Build/Deploy dirs
 deploy/bin
+docker-compose.override.yml
 
 *.log
-annotations/cmd/debug
+debug

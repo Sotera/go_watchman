@@ -12,6 +12,7 @@ import (
 	"github.com/Sotera/go_watchman/loogo"
 )
 
+// Annotation models QCR's expected input object.
 type Annotation struct {
 	ObjectID       string `json:"Object_id"`
 	ReferenceID    string `json:"Reference_id"`
@@ -22,13 +23,15 @@ type Annotation struct {
 	CampaignID     string `json:"CampaignId"`
 }
 
+// AnnotationModel models watchman event.
 type AnnotationModel struct {
-	Campaign string      `json:"campaign,omitempty"`
-	Event    string      `json:"event,omitempty"`
-	Features interface{} `json:"features,omitempty"`
-	Name     string      `json:"name,omitempty"`
-	Relevant bool        `json:"relevant,omitempty"`
-	ID       string      `json:"id,omitempty"`
+	AnnotationType string      `json:"type,omitempty"`
+	Campaign       string      `json:"campaign,omitempty"`
+	Event          string      `json:"event,omitempty"`
+	Features       interface{} `json:"features,omitempty"`
+	Name           string      `json:"name,omitempty"`
+	Relevant       bool        `json:"relevant,omitempty"`
+	ID             string      `json:"id,omitempty"`
 }
 
 type AnnotationOptions struct {
@@ -40,8 +43,15 @@ type AnnotationOptions struct {
 	AnnotationType    string
 	AnnotationTypes   []string
 	Fetcher           Fetcher
-	ParserFactory     LoogoParserFactory
-	PagerFactory      LoogoPagerFactory
+}
+
+// AnnotationMaker takes care of creating annotations.
+type AnnotationMaker struct {
+	// we need a mockable instance generator, to create instances in a nested loop.
+	// a 'normal' type won't work: we need to create many instances.
+	// instead, use a func type to create new instances of a Pager interface.
+	createPager   func(loogo.NewPagerParams) (loogo.PagerInterface, error)
+	requestParser loogo.RequestParser
 }
 
 func ProcessAnnotationTypes(options AnnotationOptions) error {
@@ -52,6 +62,17 @@ func ProcessAnnotationTypes(options AnnotationOptions) error {
 		return errors.New("no annotation types to process")
 	}
 
+	// tell annotationmaker how to create pagers.
+	createPager := func(params loogo.NewPagerParams) (loogo.PagerInterface, error) {
+		return loogo.NewPager(params)
+	}
+	//TODO: needs to be moved to calling func if we want to test this func.
+	parser := &loogo.HTTPRequestParser{
+		Client: &loogo.HTTPClient{},
+	}
+
+	am := &AnnotationMaker{createPager, parser}
+
 	for i := 0; i < len(options.AnnotationTypes); i++ {
 		options.AnnotationType = options.AnnotationTypes[i]
 		annotations, err := FetchAnnotations(options)
@@ -59,7 +80,7 @@ func ProcessAnnotationTypes(options AnnotationOptions) error {
 			log.Println(err)
 			continue
 		}
-		err = ProcessAnnotations(annotations, options)
+		err = am.ProcessAnnotations(annotations, options)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -75,13 +96,13 @@ func FetchAnnotations(options AnnotationOptions) ([]Annotation, error) {
 		return nil, err
 	}
 
-	fmt.Println(fmt.Sprintf("fetcher provided %d annotations", len(results)))
+	fmt.Printf("fetcher provided %d annotations\n", len(results))
 	return results, nil
 }
 
-func ParseAnnotationID(annotation_id string) (campaign string, event_id string) {
-	tokens := strings.Split(annotation_id, ":")
-	campaign, event_id = "", ""
+func ParseAnnotationID(annotationID string) (campaign string, eventID string) {
+	tokens := strings.Split(annotationID, ":")
+	campaign, eventID = "", ""
 	if tokens == nil || len(tokens) <= 1 {
 		return
 	}
@@ -89,20 +110,13 @@ func ParseAnnotationID(annotation_id string) (campaign string, event_id string) 
 		campaign = tokens[1]
 	}
 	if len(tokens) > 2 {
-		event_id = tokens[2]
+		eventID = tokens[2]
 	}
 	return
 }
 
-func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
+func (am *AnnotationMaker) ProcessAnnotations(annotations []Annotation, options AnnotationOptions) error {
 	var wg sync.WaitGroup
-	if options.PagerFactory == nil {
-		return errors.New("options.PagerFactory was nil")
-	}
-
-	if options.ParserFactory == nil {
-		return errors.New("options.ParserFactory was nil")
-	}
 
 	for i := 0; i < len(annotations); i++ {
 		annotation := annotations[i]
@@ -121,7 +135,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 			},
 		}
 
-		pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
+		pager, err := am.createPager(loogo.NewPagerParams{
 			URL:      options.APIRoot + "/annotations",
 			Params:   params,
 			PageSize: 1,
@@ -138,7 +152,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 
 		wg.Add(1)
 		if len(page) < 1 {
-			go CreateAnnotation(&wg, options, annotation)
+			go am.CreateAnnotation(&wg, options, annotation)
 		} else {
 			model := AnnotationModel{}
 			model.ID = page[0]["id"].(string)
@@ -152,7 +166,7 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 				model.Relevant = relevant.(bool)
 			}
 
-			go UpdateAnnotation(&wg, options, annotation, model)
+			go am.UpdateAnnotation(&wg, options, annotation, model)
 		}
 	}
 
@@ -160,65 +174,37 @@ func ProcessAnnotations(annotations []Annotation, options AnnotationOptions) err
 	return nil
 }
 
-func GetEvent(eventChannel chan loogo.Doc, options AnnotationOptions, annotation Annotation) {
-	params := loogo.QueryParams{
-		loogo.QueryParam{
-			QueryType: "Eq",
-			Field:     "_id",
-			Values:    []string{annotation.EventID},
-		},
-	}
+func (am *AnnotationMaker) GetEvent(eventChannel chan loogo.Doc, options AnnotationOptions, annotation Annotation) {
+	url := fmt.Sprintf("%s/events/%s", options.APIRoot, annotation.EventID)
 
-	pager, err := options.PagerFactory.Generate(loogo.NewPagerParams{
-		URL:      options.APIRoot + "/events",
-		Params:   params,
-		PageSize: 1,
-	})
+	doc := loogo.Doc{}
 
+	err := am.requestParser.NewRequest(loogo.NewRequestParams{URL: url}, &doc)
 	if err != nil {
-		fmt.Println(err)
-		eventChannel <- nil
-	}
-
-	page, err := pager.GetNext()
-	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		eventChannel <- nil
 		return
 	}
-
-	if len(page) > 1 {
-		fmt.Println(errors.New("loogo did not honor page size"))
-		eventChannel <- nil
-		return
-	}
-
-	if len(page) < 1 {
-		fmt.Println(errors.New("event:" + annotation.EventID + " not found"))
-		eventChannel <- nil
-		return
-	}
-
-	eventChannel <- page[0]
+	eventChannel <- doc
 }
 
-func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
+func (am *AnnotationMaker) CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation) {
 	defer wg.Done()
 	model := AnnotationModel{}
 	model.Campaign = annotation.CampaignID
 	model.Event = annotation.EventID
-	println(annotation.EventID)
+	// println(annotation.EventID)
 
 	eventChannel := make(chan loogo.Doc)
-	go GetEvent(eventChannel, options, annotation)
+	go am.GetEvent(eventChannel, options, annotation)
 	event := <-eventChannel
-
 	if event == nil {
 		log.Println("get event returned no event, event not found")
 		return
 	}
 
 	model.Features = event["hashtags"]
+	model.AnnotationType = annotation.AnnotationType
 
 	if annotation.AnnotationType == "label" {
 		model.Name = annotation.Value
@@ -231,20 +217,21 @@ func CreateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 		log.Println(err)
 		return
 	}
+
 	params := loogo.NewRequestParams{
 		URL:        options.APIRoot + "/annotations",
 		Body:       bytes,
 		HTTPMethod: "POST",
 	}
-	options.ParserFactory.Generate().NewRequest(params, doc)
+	err = am.requestParser.NewRequest(params, &doc)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }
 
-func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) {
+func (am *AnnotationMaker) UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation Annotation, model AnnotationModel) {
 	defer wg.Done()
-	var m map[string]int
-	m = make(map[string]int)
-	m["a"] = 5
-	m["b"] = 6
 	if annotation.AnnotationType == "label" {
 		model.Name = annotation.Value
 	} else {
@@ -262,5 +249,9 @@ func UpdateAnnotation(wg *sync.WaitGroup, options AnnotationOptions, annotation 
 		Body:       bytes,
 		HTTPMethod: "PUT",
 	}
-	options.ParserFactory.Generate().NewRequest(params, doc)
+	err = am.requestParser.NewRequest(params, &doc)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }

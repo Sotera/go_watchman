@@ -1,0 +1,11 @@
+version: '2.1'
+services:
+  supervisor:
+    image: sotera/go_watchman_annotations_mock_server:1
+    hostname: annotations_mock_server
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - EVENTS_API_ROOT=http://172.17.0.1:3000/api/events
+      - GIN_MODE=debug

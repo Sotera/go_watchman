@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 
 ENV TERM=xterm
 
-ARG PROJ
+ARG BIN_NAME
 
 RUN \
   apt-get update && \
@@ -17,8 +17,8 @@ ENV PATH $GOPATH/bin:$PATH
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
-COPY bin/$PROJ $GOPATH/bin
-RUN ln -s $GOPATH/bin/$PROJ $GOPATH/bin/go_app 
+COPY bin/$BIN_NAME $GOPATH/bin
+RUN ln -s $GOPATH/bin/$BIN_NAME $GOPATH/bin/go_app 
 
 COPY supervisord.conf /etc/supervisor
 

@@ -42,10 +42,10 @@ func (af AnnotationFetcher) Fetch(options AnnotationOptions) ([]Annotation, erro
 
 	startStr, endStr := getDateRange(options)
 	url := fmt.Sprintf("%s/refid/%s?type=%s&from_date=%s&to_date=%s", options.AnnotationAPIRoot, options.AnnotationRefID, options.AnnotationType, startStr, endStr)
-	println(url)
 
 	annotations := make([]Annotation, 0)
 
+	//TODO: needs to be moved to calling func if we want to test this func.
 	parser := &loogo.HTTPRequestParser{
 		Client: &loogo.HTTPClient{},
 	}
