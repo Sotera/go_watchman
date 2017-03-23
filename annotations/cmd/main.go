@@ -22,7 +22,7 @@ func main() {
 
 	options.AnnotationAPIRoot = os.Getenv("ANNOTATION_API_ROOT")
 	if options.AnnotationAPIRoot == "" {
-		options.AnnotationAPIRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotations"
+		options.AnnotationAPIRoot = "http://dev-qcr-io-services-qntfy-annotation-api.traefik.dsra.local:31888/v1/annotation"
 	} else {
 		options.AnnotationAPIRoot = strings.TrimRight(options.AnnotationAPIRoot, "/")
 	}
