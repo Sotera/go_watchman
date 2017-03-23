@@ -25,12 +25,13 @@ type Annotation struct {
 
 // AnnotationModel models watchman event.
 type AnnotationModel struct {
-	Campaign string      `json:"campaign,omitempty"`
-	Event    string      `json:"event,omitempty"`
-	Features interface{} `json:"features,omitempty"`
-	Name     string      `json:"name,omitempty"`
-	Relevant bool        `json:"relevant,omitempty"`
-	ID       string      `json:"id,omitempty"`
+	AnnotationType string      `json:"type,omitempty"`
+	Campaign       string      `json:"campaign,omitempty"`
+	Event          string      `json:"event,omitempty"`
+	Features       interface{} `json:"features,omitempty"`
+	Name           string      `json:"name,omitempty"`
+	Relevant       bool        `json:"relevant,omitempty"`
+	ID             string      `json:"id,omitempty"`
 }
 
 type AnnotationOptions struct {
@@ -203,6 +204,7 @@ func (am *AnnotationMaker) CreateAnnotation(wg *sync.WaitGroup, options Annotati
 	}
 
 	model.Features = event["hashtags"]
+	model.AnnotationType = annotation.AnnotationType
 
 	if annotation.AnnotationType == "label" {
 		model.Name = annotation.Value
