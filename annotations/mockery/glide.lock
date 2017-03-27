@@ -1,0 +1,37 @@
+hash: d6fb77b101f026e3f59fc75fae5a7dfacaa632f0dccd554e6254371a03de2dac
+updated: 2017-03-27T15:31:09.003185327-05:00
+imports:
+- name: github.com/gin-gonic/gin
+  version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
+  subpackages:
+  - binding
+  - render
+- name: github.com/golang/protobuf
+  version: 2402d76f3d41f928c7902a765dfc872356dd3aad
+  subpackages:
+  - proto
+- name: github.com/manucorporat/sse
+  version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/mattn/go-isatty
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/Sotera/go_watchman
+  version: 678b2253093512750e81ac2327247cbf71692d51
+  subpackages:
+  - annotations
+  - loogo
+  - util/time
+- name: golang.org/x/net
+  version: f315505cf3349909cdf013ea56690da34e96a451
+  subpackages:
+  - context
+- name: golang.org/x/sys
+  version: afadfcc7779c1f4db0f6f6438afcb108d9c9c7cd
+  subpackages:
+  - unix
+- name: gopkg.in/gin-gonic/gin.v1
+  version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
+- name: gopkg.in/go-playground/validator.v8
+  version: c193cecd124b5cc722d7ee5538e945bdb3348435
+- name: gopkg.in/yaml.v2
+  version: a3f3340b5840cee44f372bddb5880fcbc419b46a
+testImports: []

@@ -1,0 +1,6 @@
+package: github.com/Sotera/go_watchman/annotations
+import:
+- package: github.com/Sotera/go_watchman
+  subpackages:
+  - loogo
+  - util/time

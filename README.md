@@ -4,6 +4,18 @@
 
 Watchman processes for which go is specifically well suited
 
+## Dependencies
+
+* Go 1.6+
+* Glide 0.12
+
+## Develop
+
+```
+cd <sub-project>
+glide install
+```
+
 ## Docker build
 
 ```

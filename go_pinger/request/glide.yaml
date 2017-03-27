@@ -1,0 +1,4 @@
+package: github.com/Sotera/go_watchman/go_pinger/request
+import:
+- package: github.com/BurntSushi/toml
+  version: ~0.2.0

@@ -29,6 +29,7 @@ _testmain.go
 # Build/Deploy dirs
 deploy/bin
 docker-compose.override.yml
+vendor
 
 *.log
 debug
