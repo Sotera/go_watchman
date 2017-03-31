@@ -23,6 +23,7 @@ func (w *Watcher) Watch() {
 			key:         res[1],
 			redis:       w.Redis,
 			handlerFunc: w.HandlerFunc,
+			finalState:  "processed",
 		}
 		err = handler.handle()
 		if err != nil {
