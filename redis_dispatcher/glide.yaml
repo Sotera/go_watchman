@@ -1,0 +1,4 @@
+package: github.com/Sotera/go_watchman/redis_dispatcher
+import:
+- package: github.com/go-redis/redis
+  version: ~6.0.0
