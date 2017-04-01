@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	rd "github.com/Sotera/go_watchman/redis_dispatcher"
 )
 
 func TestHTTPFetcher_Fetch(t *testing.T) {
@@ -191,10 +193,10 @@ func TestScraper_IsFollowing(t *testing.T) {
 		})
 	}
 
-	redis := NewRedisClient()
+	redis := rd.NewRedisClient()
 	var err error
 
-	job := map[string]interface{}{"state": "new", "id": "lukewendling"}
+	job := map[string]interface{}{"state": "new", "id": "hillaryclinton"}
 
 	_, err = redis.C.HMSet("1", job).Result()
 	if err != nil {
@@ -228,6 +230,7 @@ func TestScraper_IsFollowing(t *testing.T) {
 	}
 	j["data"] = strings.Join(s.Followees(), ",")
 	j["state"] = "processed"
+	fmt.Println(len(s.Followees()))
 	_, err = redis.C.HMSet("1", j).Result()
 	if err != nil {
 		panic(err)

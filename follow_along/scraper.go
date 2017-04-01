@@ -10,7 +10,8 @@ import (
 	"golang.org/x/net/html"
 )
 
-const MAX_PAGES = 100
+// 20 per page so total of 200
+const MAX_PAGES = 10
 
 type Fetcher interface {
 	Fetch(url string) (*http.Response, error)
@@ -75,7 +76,7 @@ func (s *Scraper) IsFollowing(followee string) (bool, error) {
 		return found, nil
 	} else if nextPagePath != "" {
 		// not too many pages, like u might find with bots.
-		if s.currPage >= MAX_PAGES {
+		if s.currPage >= MAX_PAGES-1 {
 			return found, nil
 		}
 		s.SetURL(nextPagePath)
