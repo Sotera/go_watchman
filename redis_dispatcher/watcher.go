@@ -13,7 +13,7 @@ type Watcher struct {
 
 func (w *Watcher) Watch() {
 	for {
-		res, err := w.Redis.C.BRPop(10*time.Second, w.QueueName).Result()
+		res, _ := w.Redis.C.BRPop(10*time.Second, w.QueueName).Result()
 		if res == nil {
 			continue
 		}
@@ -25,10 +25,13 @@ func (w *Watcher) Watch() {
 			handlerFunc: w.HandlerFunc,
 			finalState:  "processed",
 		}
-		err = handler.handle()
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
+		go runHandler(handler)
+	}
+}
+
+func runHandler(handler *JobHandler) {
+	err := handler.handle()
+	if err != nil {
+		fmt.Println(err)
 	}
 }
