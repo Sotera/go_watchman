@@ -92,10 +92,7 @@ func (s *Scraper) findFollowee(res *http.Response, followee string) (bool, strin
 	var found bool
 	var nextPagePath string
 	//screen name regex
-	nameRegex, err := regexp.Compile(`/(.+)\?p=s`)
-	if err != nil {
-		panic(err)
-	}
+	snRegex := regexp.MustCompile(`(?i)/(.+)\?p=s`)
 
 tokens:
 	for {
@@ -118,18 +115,21 @@ tokens:
 			if t.Data == "a" {
 				for _, a := range t.Attr {
 					if a.Key == "href" {
-						// HACK: empty followee == collect all
-						if followee == "" {
-							m := nameRegex.FindStringSubmatch(a.Val)
-							if len(m) > 1 {
+						// is screen name link?
+						m := snRegex.FindStringSubmatch(a.Val)
+						if len(m) > 1 {
+							// HACK: empty followee == collect all
+							if followee == "" {
 								s.followees.add(m[1])
+							} else { // try to match followee
+								if strmatch(followee, m[1]) {
+									found = true
+									break tokens
+								}
 							}
-						} else {
-							if strmatch(a.Val, followee) {
-								found = true
-								break tokens
-							}
+
 						}
+						// look for next page anchor
 						if strmatch(a.Val, "?cursor") {
 							nextPagePath = a.Val
 						}
