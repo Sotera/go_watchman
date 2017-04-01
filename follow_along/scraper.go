@@ -10,19 +10,20 @@ import (
 	"golang.org/x/net/html"
 )
 
-// 20 per page so total of 200
-const MAX_PAGES = 10
+// system-defined max to prevent runaway paging
+const MAX_PAGES = 150
 
 type Fetcher interface {
 	Fetch(url string) (*http.Response, error)
 }
 
 type Scraper struct {
-	F         Fetcher
-	follower  string
-	url       string
-	followees Set
-	currPage  int
+	F            Fetcher
+	follower     string
+	url          string
+	followees    Set
+	currPage     int
+	maxFollowees int // 0 indicates no limit
 }
 
 type HTTPFetcher struct {
@@ -61,6 +62,13 @@ func (s *Scraper) URL() string {
 func (s *Scraper) SetURL(path string) {
 	// update url with cursor/paging path
 	s.url = fmt.Sprintf("https://mobile.twitter.com%s", path)
+}
+
+func (s *Scraper) SetMaxFollowees(limit int) {
+	if limit < 0 {
+		limit = 0
+	}
+	s.maxFollowees = limit
 }
 
 func (s *Scraper) IsFollowing(followee string) (bool, error) {
@@ -102,12 +110,6 @@ tokens:
 		case tt == html.ErrorToken:
 			// End of the document, we're done
 			return found, nextPagePath
-		case tt == html.TextToken:
-			// t := z.Token()
-
-			// if strings.ToLower(t.Data) == "show more people" {
-			// 	fmt.Println("more pages")
-			// }
 		case tt == html.StartTagToken:
 			t := z.Token()
 
@@ -121,6 +123,10 @@ tokens:
 							// HACK: empty followee == collect all
 							if followee == "" {
 								s.followees.add(m[1])
+								numFollowees := len(s.followees.Items())
+								if s.maxFollowees > 0 && numFollowees >= s.maxFollowees {
+									break tokens
+								}
 							} else { // try to match followee
 								if strmatch(followee, m[1]) {
 									found = true

@@ -196,6 +196,8 @@ func TestScraper_IsFollowing(t *testing.T) {
 	redis := rd.NewRedisClient()
 	var err error
 
+	redis.C.FlushAll()
+
 	job := map[string]interface{}{"state": "new", "id": "hillaryclinton"}
 
 	_, err = redis.C.HMSet("1", job).Result()
@@ -221,6 +223,7 @@ func TestScraper_IsFollowing(t *testing.T) {
 	fmt.Println(job1)
 
 	s := NewScraper(job1["id"])
+	s.SetMaxFollowees(10)
 	_, err = s.IsFollowing("")
 	fmt.Println(err, s.Followees())
 
@@ -230,6 +233,7 @@ func TestScraper_IsFollowing(t *testing.T) {
 	}
 	j["data"] = strings.Join(s.Followees(), ",")
 	j["state"] = "processed"
+	fmt.Println(j)
 	fmt.Println(len(s.Followees()))
 	_, err = redis.C.HMSet("1", j).Result()
 	if err != nil {
