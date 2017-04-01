@@ -11,7 +11,7 @@ go build
 ```
 cd svc
 go run main.go
-# hmset 1 id <screename> state new
+# hmset 1 id <screename> state new max 100
 # lpush genie:followfinder 1
 # ... wait ...
 # hgetall 1
