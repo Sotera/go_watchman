@@ -72,15 +72,15 @@ func (s *Scraper) IsFollowing(followee string) (bool, error) {
 	defer res.Body.Close()
 
 	found, nextPagePath := s.findFollowee(res, followee)
+	s.currPage++
 	if found {
 		return found, nil
 	} else if nextPagePath != "" {
 		// not too many pages, like u might find with bots.
-		if s.currPage >= MAX_PAGES-1 {
+		if s.currPage >= MAX_PAGES {
 			return found, nil
 		}
 		s.SetURL(nextPagePath)
-		s.currPage++
 		return s.IsFollowing(followee)
 	} else {
 		return false, nil
