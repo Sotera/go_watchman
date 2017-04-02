@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"time"
 
 	"strings"
 
@@ -30,7 +31,17 @@ type HTTPFetcher struct {
 }
 
 func (f *HTTPFetcher) Fetch(url string) (*http.Response, error) {
-	return http.Get(url)
+	// Default client has no timeout
+	client := &http.Client{
+		Timeout: time.Second * 5,
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.Do(req)
 }
 
 func NewScraper(follower string) *Scraper {
