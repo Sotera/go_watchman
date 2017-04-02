@@ -9,6 +9,7 @@ import (
 	"time"
 
 	rd "github.com/Sotera/go_watchman/redis_dispatcher"
+	"github.com/Sotera/go_watchman/util/collections"
 )
 
 func TestHTTPFetcher_Fetch(t *testing.T) {
@@ -64,7 +65,7 @@ func TestScraper_Followees(t *testing.T) {
 		F            Fetcher
 		follower     string
 		url          string
-		followees    Set
+		followees    collections.Set
 		currPage     int
 		maxFollowees int
 	}
@@ -97,7 +98,7 @@ func TestScraper_URL(t *testing.T) {
 		F            Fetcher
 		follower     string
 		url          string
-		followees    Set
+		followees    collections.Set
 		currPage     int
 		maxFollowees int
 	}
@@ -130,7 +131,7 @@ func TestScraper_SetURL(t *testing.T) {
 		F            Fetcher
 		follower     string
 		url          string
-		followees    Set
+		followees    collections.Set
 		currPage     int
 		maxFollowees int
 	}
@@ -164,7 +165,7 @@ func TestScraper_SetMaxFollowees(t *testing.T) {
 		F            Fetcher
 		follower     string
 		url          string
-		followees    Set
+		followees    collections.Set
 		currPage     int
 		maxFollowees int
 	}
@@ -198,7 +199,7 @@ func TestScraper_IsFollowing(t *testing.T) {
 		F            Fetcher
 		follower     string
 		url          string
-		followees    Set
+		followees    collections.Set
 		currPage     int
 		maxFollowees int
 	}
@@ -288,7 +289,7 @@ func TestScraper_findFollowee(t *testing.T) {
 		F            Fetcher
 		follower     string
 		url          string
-		followees    Set
+		followees    collections.Set
 		currPage     int
 		maxFollowees int
 	}

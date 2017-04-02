@@ -17,5 +17,6 @@ env:
   - TEST_DIR=annotations/mockery
   - TEST_DIR=loogo
   - TEST_DIR=util/time
+  - TEST_DIR=util/collections
 script:
   - cd $TEST_DIR && glide install && go test -v

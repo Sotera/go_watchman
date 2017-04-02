@@ -1,9 +1,11 @@
-package follow_along
+package collections
 
+// Set is a collection of unique items.
 type Set struct {
 	items map[interface{}]bool
 }
 
+// Items returns set's items
 func (s *Set) Items() []interface{} {
 	keys := make([]interface{}, len(s.items))
 
@@ -15,7 +17,8 @@ func (s *Set) Items() []interface{} {
 	return keys
 }
 
-func (s *Set) add(item interface{}) {
+// Add inserts an item.
+func (s *Set) Add(item interface{}) {
 	if s.items == nil {
 		s.items = map[interface{}]bool{}
 	}
@@ -23,4 +26,11 @@ func (s *Set) add(item interface{}) {
 		return
 	}
 	s.items[item] = true
+}
+
+// Delete removes an item.
+func (s *Set) Delete(key interface{}) {
+	if s.items != nil {
+		delete(s.items, key)
+	}
 }

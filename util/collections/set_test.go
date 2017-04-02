@@ -1,4 +1,4 @@
-package follow_along
+package collections
 
 import (
 	"reflect"
@@ -28,7 +28,7 @@ func TestSet_Items(t *testing.T) {
 	}
 }
 
-func TestSet_add(t *testing.T) {
+func TestSet_Add(t *testing.T) {
 	type fields struct {
 		items map[interface{}]bool
 	}
@@ -47,7 +47,31 @@ func TestSet_add(t *testing.T) {
 			s := &Set{
 				items: tt.fields.items,
 			}
-			s.add(tt.args.item)
+			s.Add(tt.args.item)
+		})
+	}
+}
+
+func TestSet_Delete(t *testing.T) {
+	type fields struct {
+		items map[interface{}]bool
+	}
+	type args struct {
+		key interface{}
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Set{
+				items: tt.fields.items,
+			}
+			s.Delete(tt.args.key)
 		})
 	}
 }

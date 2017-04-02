@@ -9,6 +9,7 @@ import (
 
 	"strings"
 
+	"github.com/Sotera/go_watchman/util/collections"
 	"golang.org/x/net/html"
 )
 
@@ -23,7 +24,7 @@ type Scraper struct {
 	F            Fetcher
 	follower     string
 	url          string
-	followees    Set
+	followees    collections.Set
 	currPage     int
 	maxFollowees int // 0 indicates no limit
 }
@@ -141,7 +142,7 @@ tokens:
 						if len(m) > 1 {
 							// HACK: empty followee == collect all
 							if followee == "" {
-								s.followees.add(m[1])
+								s.followees.Add(m[1])
 								numFollowees := len(s.followees.Items())
 								if s.maxFollowees > 0 && numFollowees >= s.maxFollowees {
 									break tokens
