@@ -5,7 +5,7 @@ type Set struct {
 	items map[interface{}]bool
 }
 
-// Items returns set's items
+// Items returns set's items.
 func (s *Set) Items() []interface{} {
 	keys := make([]interface{}, len(s.items))
 
@@ -17,15 +17,17 @@ func (s *Set) Items() []interface{} {
 	return keys
 }
 
-// Add inserts an item.
-func (s *Set) Add(item interface{}) {
+// Add inserts one or many items.
+func (s *Set) Add(items ...interface{}) {
 	if s.items == nil {
 		s.items = map[interface{}]bool{}
 	}
-	if s.items[item] {
-		return
+	for _, m := range items {
+		if s.items[m] {
+			continue
+		}
+		s.items[m] = true
 	}
-	s.items[item] = true
 }
 
 // Delete removes an item.
