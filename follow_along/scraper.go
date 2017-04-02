@@ -2,6 +2,7 @@ package follow_along
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"time"
@@ -15,7 +16,7 @@ import (
 const MAX_PAGES = 150
 
 type Fetcher interface {
-	Fetch(url string) (*http.Response, error)
+	Fetch(url string) (io.ReadCloser, error)
 }
 
 type Scraper struct {
@@ -30,7 +31,7 @@ type Scraper struct {
 type HTTPFetcher struct {
 }
 
-func (f *HTTPFetcher) Fetch(url string) (*http.Response, error) {
+func (f *HTTPFetcher) Fetch(url string) (io.ReadCloser, error) {
 	// Default client has no timeout
 	client := &http.Client{
 		Timeout: time.Second * 5,
@@ -41,7 +42,12 @@ func (f *HTTPFetcher) Fetch(url string) (*http.Response, error) {
 		return nil, err
 	}
 
-	return client.Do(req)
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Body, nil
 }
 
 func NewScraper(follower string) *Scraper {
@@ -83,14 +89,16 @@ func (s *Scraper) SetMaxFollowees(limit int) {
 }
 
 func (s *Scraper) IsFollowing(followee string) (bool, error) {
-	res, err := s.F.Fetch(s.URL())
+	rc, err := s.F.Fetch(s.URL())
 	if err != nil {
 		fmt.Println(err)
 		return false, err
 	}
-	defer res.Body.Close()
 
-	found, nextPagePath := s.findFollowee(res, followee)
+	// must close after tokenizing
+	defer rc.Close()
+
+	found, nextPagePath := s.findFollowee(rc, followee)
 	s.currPage++
 	if found {
 		return found, nil
@@ -106,8 +114,8 @@ func (s *Scraper) IsFollowing(followee string) (bool, error) {
 	}
 }
 
-func (s *Scraper) findFollowee(res *http.Response, followee string) (bool, string) {
-	z := html.NewTokenizer(res.Body)
+func (s *Scraper) findFollowee(markup io.Reader, followee string) (bool, string) {
+	z := html.NewTokenizer(markup)
 	var found bool
 	var nextPagePath string
 	//screen name regex

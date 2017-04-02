@@ -2,7 +2,7 @@ package follow_along
 
 import (
 	"fmt"
-	"net/http"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -19,7 +19,7 @@ func TestHTTPFetcher_Fetch(t *testing.T) {
 		name    string
 		f       *HTTPFetcher
 		args    args
-		want    *http.Response
+		want    io.ReadCloser
 		wantErr bool
 	}{
 	// TODO: Add test cases.
@@ -61,27 +61,29 @@ func TestNewScraper(t *testing.T) {
 
 func TestScraper_Followees(t *testing.T) {
 	type fields struct {
-		F         Fetcher
-		follower  string
-		url       string
-		followees Set
-		currPage  int
+		F            Fetcher
+		follower     string
+		url          string
+		followees    Set
+		currPage     int
+		maxFollowees int
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   Set
+		want   []string
 	}{
 	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Scraper{
-				F:         tt.fields.F,
-				follower:  tt.fields.follower,
-				url:       tt.fields.url,
-				followees: tt.fields.followees,
-				currPage:  tt.fields.currPage,
+				F:            tt.fields.F,
+				follower:     tt.fields.follower,
+				url:          tt.fields.url,
+				followees:    tt.fields.followees,
+				currPage:     tt.fields.currPage,
+				maxFollowees: tt.fields.maxFollowees,
 			}
 			if got := s.Followees(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Scraper.Followees() = %v, want %v", got, tt.want)
@@ -92,11 +94,12 @@ func TestScraper_Followees(t *testing.T) {
 
 func TestScraper_URL(t *testing.T) {
 	type fields struct {
-		F         Fetcher
-		follower  string
-		url       string
-		followees Set
-		currPage  int
+		F            Fetcher
+		follower     string
+		url          string
+		followees    Set
+		currPage     int
+		maxFollowees int
 	}
 	tests := []struct {
 		name   string
@@ -108,11 +111,12 @@ func TestScraper_URL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Scraper{
-				F:         tt.fields.F,
-				follower:  tt.fields.follower,
-				url:       tt.fields.url,
-				followees: tt.fields.followees,
-				currPage:  tt.fields.currPage,
+				F:            tt.fields.F,
+				follower:     tt.fields.follower,
+				url:          tt.fields.url,
+				followees:    tt.fields.followees,
+				currPage:     tt.fields.currPage,
+				maxFollowees: tt.fields.maxFollowees,
 			}
 			if got := s.URL(); got != tt.want {
 				t.Errorf("Scraper.URL() = %v, want %v", got, tt.want)
@@ -123,11 +127,12 @@ func TestScraper_URL(t *testing.T) {
 
 func TestScraper_SetURL(t *testing.T) {
 	type fields struct {
-		F         Fetcher
-		follower  string
-		url       string
-		followees Set
-		currPage  int
+		F            Fetcher
+		follower     string
+		url          string
+		followees    Set
+		currPage     int
+		maxFollowees int
 	}
 	type args struct {
 		path string
@@ -142,24 +147,60 @@ func TestScraper_SetURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Scraper{
-				F:         tt.fields.F,
-				follower:  tt.fields.follower,
-				url:       tt.fields.url,
-				followees: tt.fields.followees,
-				currPage:  tt.fields.currPage,
+				F:            tt.fields.F,
+				follower:     tt.fields.follower,
+				url:          tt.fields.url,
+				followees:    tt.fields.followees,
+				currPage:     tt.fields.currPage,
+				maxFollowees: tt.fields.maxFollowees,
 			}
 			s.SetURL(tt.args.path)
 		})
 	}
 }
 
+func TestScraper_SetMaxFollowees(t *testing.T) {
+	type fields struct {
+		F            Fetcher
+		follower     string
+		url          string
+		followees    Set
+		currPage     int
+		maxFollowees int
+	}
+	type args struct {
+		limit int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Scraper{
+				F:            tt.fields.F,
+				follower:     tt.fields.follower,
+				url:          tt.fields.url,
+				followees:    tt.fields.followees,
+				currPage:     tt.fields.currPage,
+				maxFollowees: tt.fields.maxFollowees,
+			}
+			s.SetMaxFollowees(tt.args.limit)
+		})
+	}
+}
+
 func TestScraper_IsFollowing(t *testing.T) {
 	type fields struct {
-		F         Fetcher
-		follower  string
-		url       string
-		followees Set
-		currPage  int
+		F            Fetcher
+		follower     string
+		url          string
+		followees    Set
+		currPage     int
+		maxFollowees int
 	}
 	type args struct {
 		followee string
@@ -176,11 +217,12 @@ func TestScraper_IsFollowing(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Scraper{
-				F:         tt.fields.F,
-				follower:  tt.fields.follower,
-				url:       tt.fields.url,
-				followees: tt.fields.followees,
-				currPage:  tt.fields.currPage,
+				F:            tt.fields.F,
+				follower:     tt.fields.follower,
+				url:          tt.fields.url,
+				followees:    tt.fields.followees,
+				currPage:     tt.fields.currPage,
+				maxFollowees: tt.fields.maxFollowees,
 			}
 			got, err := s.IsFollowing(tt.args.followee)
 			if (err != nil) != tt.wantErr {
@@ -243,14 +285,15 @@ func TestScraper_IsFollowing(t *testing.T) {
 
 func TestScraper_findFollowee(t *testing.T) {
 	type fields struct {
-		F         Fetcher
-		follower  string
-		url       string
-		followees Set
-		currPage  int
+		F            Fetcher
+		follower     string
+		url          string
+		followees    Set
+		currPage     int
+		maxFollowees int
 	}
 	type args struct {
-		res      *http.Response
+		markup   io.Reader
 		followee string
 	}
 	tests := []struct {
@@ -265,13 +308,14 @@ func TestScraper_findFollowee(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Scraper{
-				F:         tt.fields.F,
-				follower:  tt.fields.follower,
-				url:       tt.fields.url,
-				followees: tt.fields.followees,
-				currPage:  tt.fields.currPage,
+				F:            tt.fields.F,
+				follower:     tt.fields.follower,
+				url:          tt.fields.url,
+				followees:    tt.fields.followees,
+				currPage:     tt.fields.currPage,
+				maxFollowees: tt.fields.maxFollowees,
 			}
-			got, got1 := s.findFollowee(tt.args.res, tt.args.followee)
+			got, got1 := s.findFollowee(tt.args.markup, tt.args.followee)
 			if got != tt.want {
 				t.Errorf("Scraper.findFollowee() got = %v, want %v", got, tt.want)
 			}
