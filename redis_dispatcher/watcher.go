@@ -12,8 +12,10 @@ type Watcher struct {
 }
 
 func (w *Watcher) Watch() {
+	fmt.Printf("watching %s...\n", w.QueueName)
 	for {
 		res, _ := w.Redis.C.BRPop(10*time.Second, w.QueueName).Result()
+		// err on BRPop timeout, so ignoring it
 		if res == nil {
 			continue
 		}
@@ -23,7 +25,6 @@ func (w *Watcher) Watch() {
 			key:         res[1],
 			redis:       w.Redis,
 			handlerFunc: w.HandlerFunc,
-			finalState:  "processed",
 		}
 		go runHandler(handler)
 	}

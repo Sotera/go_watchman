@@ -5,15 +5,19 @@ import (
 )
 
 type JobHandler struct {
-	key         string
-	redis       *RedisClient
-	job         map[string]string
-	handlerFunc func(job map[string]string) (string, error)
-	finalState  string
+	key          string
+	redis        *RedisClient
+	job          map[string]string
+	handlerFunc  func(job map[string]string) (string, error)
+	initialState string
+	finalState   string
 }
 
 func (jh *JobHandler) handle() error {
 	var err error
+	if jh.initialState == "" {
+		jh.initialState = "new"
+	}
 	if jh.finalState == "" {
 		jh.finalState = "processed"
 	}
