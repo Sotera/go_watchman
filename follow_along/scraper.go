@@ -35,7 +35,7 @@ type HTTPFetcher struct {
 func (f *HTTPFetcher) Fetch(url string) (io.ReadCloser, error) {
 	// Default client has no timeout
 	client := &http.Client{
-		Timeout: time.Second * 5,
+		Timeout: time.Second * 10,
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -90,10 +90,21 @@ func (s *Scraper) SetMaxFollowees(limit int) {
 }
 
 func (s *Scraper) IsFollowing(followee string) (bool, error) {
-	rc, err := s.F.Fetch(s.URL())
-	if err != nil {
-		fmt.Println(err)
-		return false, err
+	var err error
+	var rc io.ReadCloser
+
+	// try a few times if needed
+	for i, maxTries := 0, 5; i <= maxTries; i++ {
+		if i == maxTries {
+			return false, err
+		}
+		fmt.Println("trying")
+		rc, err = s.F.Fetch(s.URL())
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		break
 	}
 
 	// must close after tokenizing
