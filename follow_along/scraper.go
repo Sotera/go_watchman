@@ -98,7 +98,6 @@ func (s *Scraper) IsFollowing(followee string) (bool, error) {
 		if i == maxTries {
 			return false, err
 		}
-		fmt.Println("trying")
 		rc, err = s.F.Fetch(s.URL())
 		if err != nil {
 			fmt.Println(err)
