@@ -1,0 +1,22 @@
+hash: 82c0bedba472ed79d8d88a764aa847adff48b157e098f27f62d84bbe24df0190
+updated: 2017-04-03T09:04:08.150085647-05:00
+imports:
+- name: github.com/go-redis/redis
+  version: 2cf5af9928978bbef8d1076607022403439e177c
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+  - internal/proto
+- name: github.com/Sotera/go_watchman
+  version: 79cd3a89b246a25f8759a813d09533564e61106a
+  subpackages:
+  - redis_dispatcher
+  - util/collections
+- name: golang.org/x/net
+  version: f315505cf3349909cdf013ea56690da34e96a451
+  subpackages:
+  - html
+  - html/atom
+testImports: []
