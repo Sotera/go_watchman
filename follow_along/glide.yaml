@@ -1,9 +1,0 @@
-package: github.com/Sotera/go_watchman/follow_along
-import:
-- package: github.com/Sotera/go_watchman
-  subpackages:
-  - redis_dispatcher
-  - util/collections
-- package: golang.org/x/net
-  subpackages:
-  - html
