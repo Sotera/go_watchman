@@ -1,12 +1,18 @@
 FROM ubuntu:16.04
 
+# https://github.com/docker/docker/issues/4032
+ARG DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm
 
 ARG BIN_NAME
 
 RUN \
   apt-get update && \
-  apt-get install -y supervisor && \
+  apt-get install -y \
+    ca-certificates \
+    supervisor
+  
+RUN \
   rm -rf /var/lib/apt/lists/* && \
   sed -i 's/^\(\[supervisord\]\)$/\1\nnodaemon=true/' /etc/supervisor/supervisord.conf
 
