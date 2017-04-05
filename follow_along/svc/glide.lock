@@ -1,5 +1,5 @@
 hash: 966d77a7044bcaf375a059ba3748e8db333408a84aa25c7f049c9727984fb775
-updated: 2017-04-03T09:46:45.388158652-05:00
+updated: 2017-04-05T10:03:19.409164964-05:00
 imports:
 - name: github.com/go-redis/redis
   version: 2cf5af9928978bbef8d1076607022403439e177c
@@ -10,7 +10,7 @@ imports:
   - internal/pool
   - internal/proto
 - name: github.com/Sotera/go_watchman
-  version: 79cd3a89b246a25f8759a813d09533564e61106a
+  version: 8b0e9c449dfb665a5a5c8148ff50ffe54f658d39
   subpackages:
   - follow_along
   - redis_dispatcher
