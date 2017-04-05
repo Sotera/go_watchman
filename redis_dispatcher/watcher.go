@@ -1,7 +1,8 @@
 package redis_dispatcher
 
 import (
-	"fmt"
+	"log"
+	"net"
 	"time"
 )
 
@@ -12,14 +13,17 @@ type Watcher struct {
 }
 
 func (w *Watcher) Watch() {
-	fmt.Printf("watching %s...\n", w.QueueName)
+	log.Printf("watching %s...\n", w.QueueName)
 	for {
-		res, _ := w.Redis.C.BRPop(10*time.Second, w.QueueName).Result()
-		// err on BRPop timeout, so ignoring it
-		if res == nil {
+		res, err := w.Redis.C.BRPop(10*time.Second, w.QueueName).Result()
+		if err != nil {
+			if _, ok := err.(*net.OpError); ok {
+				log.Fatal(err)
+			}
+			// keep trying for all other errors
 			continue
 		}
-		fmt.Println("job recvd", res)
+		log.Println("job recvd", res)
 
 		handler := &JobHandler{
 			key:         res[1],
@@ -33,6 +37,6 @@ func (w *Watcher) Watch() {
 func runHandler(handler *JobHandler) {
 	err := handler.handle()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }

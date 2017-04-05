@@ -2,6 +2,7 @@ package redis_dispatcher
 
 import (
 	"fmt"
+	"log"
 )
 
 type JobHandler struct {
@@ -28,7 +29,7 @@ func (jh *JobHandler) handle() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("job", jh.job)
+	log.Println("job", jh.job)
 
 	data, err := jh.handlerFunc(jh.job)
 	if err != nil {
@@ -56,6 +57,6 @@ func (jh *JobHandler) update(data string, state string, err error) (string, erro
 		job["error"] = fmt.Sprintf("%v", err)
 	}
 
-	fmt.Println("updated job", job)
+	log.Println("updated job", job)
 	return jh.redis.C.HMSet(jh.key, job).Result()
 }
