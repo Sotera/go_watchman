@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -17,19 +17,34 @@ func main() {
 		q = "genie:followfinder"
 	}
 
+	cacheSize := os.Getenv("CACHE_SIZE")
+	if cacheSize == "" {
+		cacheSize = "100"
+	}
+
+	// maintain an internal cache to help clients.
+	cs, _ := strconv.Atoi(cacheSize)
+	c := cache{maxSize: cs}
+
 	handler := func(job map[string]string) (string, error) {
-		sn := f.NewScraper(job["id"])
+		if ci, hit := c.item(job["id"]); hit {
+			log.Println("cache hit:", job["id"])
+			return ci.value.(string), nil
+		}
+		scr := f.NewScraper(job["id"])
 		max, err := strconv.Atoi(job["max"])
 		if err == nil {
-			sn.SetMaxFollowees(max)
+			scr.SetMaxFollowees(max)
 		}
-		_, err = sn.IsFollowing("")
+		_, err = scr.IsFollowing("")
 		if err != nil {
 			return "", err
 		}
-		fmt.Println("found", sn.Followees())
+		log.Println("found", scr.Followees())
 
-		return strings.Join(sn.Followees(), ","), nil
+		followees := strings.Join(scr.Followees(), ",")
+		c.add(cacheItem{key: job["id"], value: followees})
+		return followees, nil
 	}
 
 	redis := rd.NewRedisClient()

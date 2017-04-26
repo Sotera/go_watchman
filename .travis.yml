@@ -18,5 +18,6 @@ env:
   - TEST_DIR=loogo
   - TEST_DIR=util/time
   - TEST_DIR=util/collections
+  - TEST_DIR=follow_along/svc
 script:
   - cd $TEST_DIR && glide install && go test -v
