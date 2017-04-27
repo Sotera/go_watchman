@@ -27,7 +27,7 @@ func main() {
 	c := cache{maxSize: cs}
 
 	handler := func(job map[string]string) (string, error) {
-		if ci, hit := c.item(job["id"]); hit {
+		if ci, hit := c.get(job["id"]); hit {
 			log.Println("cache hit:", job["id"])
 			return ci.value.(string), nil
 		}
